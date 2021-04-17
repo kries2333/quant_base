@@ -35,17 +35,20 @@ if __name__ == "__main__":
              'r_line_equity_curve',
              ]]
 
+    # 截取最大回撤部分
+    df = df['2019-06-26 20:30:00':'2019-10-25 21:30:00']
+
     add_plot = [
-        # mpf.make_addplot(df['line_upper'], linestyle='dotted', panel=0),
-        # mpf.make_addplot(df['line_median'], linestyle='dotted', panel=0),
-        # mpf.make_addplot(df['line_lower'], linestyle='dotted', panel=0),
+        mpf.make_addplot(df['line_upper'], linestyle='dotted', panel=0),
+        mpf.make_addplot(df['line_median'], linestyle='dotted', panel=0),
+        mpf.make_addplot(df['line_lower'], linestyle='dotted', panel=0),
         # mpf.make_addplot(df['K'], linestyle='dotted', panel=1,color = 'blue'),
         # mpf.make_addplot(df['D'], linestyle='dotted', panel=1,color = 'yellow'),
         # mpf.make_addplot(df['J'], linestyle='dotted', panel=1,color = 'black'),
         mpf.make_addplot(df['sig_short'], type='scatter', panel=0, markersize=100, marker='v', color='r'),
         mpf.make_addplot(df['sig_long'], type='scatter', panel=0, markersize=100, marker='^', color='g'),
         mpf.make_addplot(df['sig_close'], type='scatter', panel=0, markersize=100, color='orange'),
-        mpf.make_addplot(df['r_line_equity_curve'], color='purple', panel=0)
+        # mpf.make_addplot(df['r_line_equity_curve'], color='purple', panel=0)
         # mpf.make_addplot(df['rsi'],color='b',panel=0)
     ]
 
