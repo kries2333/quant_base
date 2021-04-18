@@ -4,7 +4,7 @@ import numpy as np
 
 # =====简单布林策略
 # 策略
-def signal_simple_bolling(df, para=[200, 2]):
+def signal_simple_bolling(df, para=[200, 2, 0.3]):
     """
     :param df:
     :param para: n, m
@@ -21,6 +21,7 @@ def signal_simple_bolling(df, para=[200, 2]):
     # ===策略参数
     n = int(para[0])
     m = para[1]
+    x = para[2] / 100
 
     # ===计算指标
     # 计算均线
@@ -30,26 +31,46 @@ def signal_simple_bolling(df, para=[200, 2]):
     df['upper'] = df['median'] + m * df['std']
     df['lower'] = df['median'] - m * df['std']
 
+
     # ===计算信号
     # 找出做多信号
     condition1 = df['close'] > df['upper']  # 当前K线的收盘价 > 上轨
     condition2 = df['close'].shift(1) <= df['upper'].shift(1)  # 之前K线的收盘价 <= 上轨
     df.loc[condition1 & condition2, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
+    df.loc[condition1 & condition2, 'privce_long'] = df['open'].shift(-1)
 
     # 找出做多平仓信号
     condition1 = df['close'] < df['median']  # 当前K线的收盘价 < 中轨
     condition2 = df['close'].shift(1) >= df['median'].shift(1)  # 之前K线的收盘价 >= 中轨
     df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2, 'privce_long'] = 0
 
     # 找出做空信号
     condition1 = df['close'] < df['lower']  # 当前K线的收盘价 < 下轨
     condition2 = df['close'].shift(1) >= df['lower'].shift(1)  # 之前K线的收盘价 >= 下轨
     df.loc[condition1 & condition2, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
+    df.loc[condition1 & condition2, 'privce_short'] = df['open'].shift(-1)
 
     # 找出做空平仓信号
     condition1 = df['close'] > df['median']  # 当前K线的收盘价 > 中轨
     condition2 = df['close'].shift(1) <= df['median'].shift(1)  # 之前K线的收盘价 <= 中轨
     df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2, 'privce_short'] = 0
+
+    df['privce_short'].fillna(method='ffill',inplace=True)
+    df['privce_long'].fillna(method='ffill',inplace=True)
+    df['long_pos']=df['signal_long']
+    df['short_pos']=df['signal_short']
+    df['long_pos'].fillna(method='ffill',inplace=True)
+    df['short_pos'].fillna(method='ffill',inplace=True)
+
+    condition1 = ((df['long_pos'] == 1) & (df['long_pos'].shift(1) == 1)) & (
+                (df['close'].shift(1) - df['privce_long']).abs() / df['privce_long'] >= x)
+    df.loc[condition1, 'signal_long'] = 0
+
+    condition1 = (df['short_pos'] == -1) & (df['short_pos'].shift(1) == -1) & (
+                (df['close'].shift(1) - df['privce_short']).abs() / df['privce_short'] >= x)
+    df.loc[condition1, 'signal_short'] = 0
 
     # 合并做多做空信号，去除重复信号
     df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
@@ -65,7 +86,8 @@ def signal_simple_bolling(df, para=[200, 2]):
 
 
 # 策略参数组合
-def signal_simple_bolling_para_list(m_list=range(20, 1000+20, 20), n_list=[i / 10 for i in list(np.arange(3, 50+2, 2))]):
+def signal_simple_bolling_para_list(m_list=range(20, 1000+20, 20), n_list=[i / 10 for i in list(np.arange(3, 50+2, 2))],
+                                    x_list=[i / 10 for i in list(np.arange(50, 600, 5))]):
     """
     产生布林 策略的参数范围
     :param m_list:
@@ -75,13 +97,15 @@ def signal_simple_bolling_para_list(m_list=range(20, 1000+20, 20), n_list=[i / 1
     print('参数遍历范围：')
     print('m_list', list(m_list))
     print('n_list', list(n_list))
+    print('x_list', x_list)
 
     para_list = []
 
     for m in m_list:
         for n in n_list:
-            para = [m, n]
-            para_list.append(para)
+            for x in x_list:
+                para = [m, n, x]
+                para_list.append(para)
 
     return para_list
 

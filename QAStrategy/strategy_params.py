@@ -4,12 +4,12 @@ from multiprocessing import Pool, cpu_count
 from datetime import datetime
 import pandas as pd
 
-from QAStrategy import Signals
+import Signals
 
 # =====回测固定参数
-from QAStrategy.Evaluate import equity_curve_for_OKEx_USDT_future_next_open
-from QAStrategy.Position import position_for_OKEx_future
-from QAStrategy.Statistics import return_drawdown_ratio
+from Evaluate import equity_curve_for_OKEx_USDT_future_next_open
+from Position import position_for_OKEx_future
+from Statistics import return_drawdown_ratio
 
 tag = '20210417'  # 本次回测标记
 description = '回测数据基于币安usdt现货的分钟数据'

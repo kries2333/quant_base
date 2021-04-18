@@ -10,7 +10,7 @@ def routes(app):
     def index():
         symbol = 'ETH/USDT'
 
-        p = '../data/output/equity_curve/signal_simple_bolling_ETH_1h_[100, 3.5].csv'
+        p = '../data/output/equity_curve/signal_simple_bolling_ETH_30t_[200, 1.7, 0.2].csv'
         _all_data = pd.read_csv(p)
 
         _all_data = _all_data.sort_values(by='candle_begin_time', ascending=False)
