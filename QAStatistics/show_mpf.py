@@ -2,43 +2,100 @@ import mplfinance as mpf
 import pandas as pd
 
 import pyecharts.options as opts
-from pyecharts.charts import Line, Kline, Grid
+from pyecharts.charts import Line, Kline, EffectScatter, Grid
+from pyecharts.globals import ThemeType
 
 symbol = 'ETH-USDT_5m'
 
-def show(df):
+def draw_chart(df):
+    # temp = df[df['signal'].notnull()][['signal']]
+    # temp = temp[temp['signal'] != temp['signal'].shift(1)]
+    signal = df[df['signal'] == 1].values.tolist()
+    high = df['high'].values.tolist()
+    date = df['candle_begin_time'].values.tolist()
 
-    # curve_x = df['candle_begin_time'].values.tolist()
-    # curve_y = df['open'].round(2).values.tolist()
+    new_data = df[['open', 'close', 'high', 'low']].values.tolist()
+    line_upper_data = list(df['line_upper'].values)
+    line_median_data = list(df['line_median'].values)
+    line_lower_data = list(df['line_lower'].values)
 
-    # c = (
-    #     Line().add_xaxis(curve_x).add_yaxis("收益曲线 %s" % symbol, curve_y,
-    #                                         areastyle_opts=opts.AreaStyleOpts(opacity=0.5)).set_global_opts(
-    #         title_opts=opts.TitleOpts(title='策略收益曲线图')).render("line_area_style.html")
-    # )
+    es = (
+        EffectScatter()
+        .add_xaxis(date)
+        .add_yaxis("", signal)
+    )
 
-    date = df["candle_begin_time"].apply(lambda x: str(x)).tolist()
-    k_plot_value = df.apply(lambda record: [record['open'], record['close'], record['low'], record['high']],
-                            axis=1).tolist()
-    sig_value = df.apply(lambda record: [record['sig_short']],
-                            axis=1).tolist()
-
-
-    kline = Kline()
-    kline.add_xaxis(date)
-    kline.add_yaxis("kline", k_plot_value, markpoint_opts=sig_value)
-    kline.set_global_opts(yaxis_opts=opts.AxisOpts(is_scale=True),
+    kline = (
+        Kline()
+            .add_xaxis(xaxis_data=date)
+            .add_yaxis("k_线图",
+                       y_axis=new_data,
+                       itemstyle_opts=opts.ItemStyleOpts(color="#ec0000",color0="#00da3c",border_color="#8A0000",border_color0="#008F28",),
+                       markpoint_opts=opts.MarkPointOpts(
+                           data=[
+                               opts.MarkPointItem(type_="signal", name="signal")
+                           ]
+                       ),)
+            .set_global_opts(
             xaxis_opts=opts.AxisOpts(is_scale=True),
-            datazoom_opts=[opts.DataZoomOpts(type_="inside")])
+            yaxis_opts=opts.AxisOpts(
+                is_scale=True,
+                splitarea_opts=opts.SplitAreaOpts(
+                    is_show=True, areastyle_opts=opts.AreaStyleOpts(opacity=1)
+                ),
+            ),
+            datazoom_opts=[opts.DataZoomOpts(type_="inside")],
+        )
 
-    lines = Line()
-    lines.add_xaxis(date)
-    lines.add_yaxis("sig", sig_value)
+    )
 
-    overlap_1 = lines.overlap(kline)
-    grid = Grid(init_opts=opts.InitOpts(width="1000px", height="800px"))
-    grid.add(overlap_1, grid_opts=opts.GridOpts(pos_right="58%"), is_control_axis_index=True)
-    grid.render()
+    overlap_kline = kline.overlap(es)
+
+    kline_line = (
+        Line()
+        .add_xaxis(xaxis_data=date)
+            .add_yaxis(
+            series_name="upper",
+            y_axis=line_upper_data,
+            is_smooth=True,
+            is_hover_animation=False,
+            linestyle_opts=opts.LineStyleOpts(width=3, opacity=0.5),
+            itemstyle_opts=opts.ItemStyleOpts(color="#0004a1"),
+            label_opts=opts.LabelOpts(is_show=False),
+        )
+        .add_yaxis(
+            series_name="median",
+            y_axis=line_median_data,
+            is_smooth=True,
+            is_hover_animation=False,
+            linestyle_opts=opts.LineStyleOpts(width=3, opacity=0.5),
+            itemstyle_opts=opts.ItemStyleOpts(color="#fff401"),
+            label_opts=opts.LabelOpts(is_show=False),
+        )
+        .add_yaxis(
+            series_name="lower",
+            y_axis=line_lower_data,
+            is_smooth=True,
+            is_hover_animation=False,
+            linestyle_opts=opts.LineStyleOpts(width=3, opacity=0.5),
+            itemstyle_opts=opts.ItemStyleOpts(color="#71f401"),
+            label_opts=opts.LabelOpts(is_show=False),
+        )
+        .set_global_opts(xaxis_opts=opts.AxisOpts(type_="category"))
+    )
+
+    overlap_kline_line = kline_line.overlap(overlap_kline)
+
+    # Kline And Line
+    # overlap_kline_line = kline.overlap(line)
+    # overlap_kline_line.render_notebook()
+    # grid_chart = Grid(init_opts=opts.InitOpts(width="1400px", height="800px"))
+    # grid_chart.add(
+    #     overlap_kline_line,
+    #     # 设置位置
+    #     grid_opts=opts.GridOpts(pos_left="3%", pos_right="1%", pos_top="2%", height="80%"),
+    # )
+    overlap_kline.render()
 
 if __name__ == "__main__":
     # =====读入数据
@@ -61,30 +118,4 @@ if __name__ == "__main__":
     df['Low'] = df['low']
     df['Close'] = df['close']
     df['Volume'] = df['b_bar_quote_volume']
-
-    # # 选取要画图的列
-    # df = df[['Open', 'High', 'Low', 'Close', 'Volume',
-    #          # 'quote_volume',
-    #          'line_upper', 'line_median', 'line_lower',
-    #          # 'K','D','J',
-    #          'sig_long', 'sig_short', 'sig_close',
-    #          'r_line_equity_curve',
-    #          ]]
-
-    # # 截取最大回撤部分
-    # df = df['2019-06-26 20:30:00':'2019-10-25 21:30:00']
-    #
-    # add_plot = [
-    #     mpf.make_addplot(df['line_upper'], linestyle='dotted', panel=0),
-    #     mpf.make_addplot(df['line_median'], linestyle='dotted', panel=0),
-    #     mpf.make_addplot(df['line_lower'], linestyle='dotted', panel=0),
-    #     # mpf.make_addplot(df['K'], linestyle='dotted', panel=1,color = 'blue'),
-    #     # mpf.make_addplot(df['D'], linestyle='dotted', panel=1,color = 'yellow'),
-    #     # mpf.make_addplot(df['J'], linestyle='dotted', panel=1,color = 'black'),
-    #     mpf.make_addplot(df['sig_short'], type='scatter', panel=0, markersize=100, marker='v', color='r'),
-    #     mpf.make_addplot(df['sig_long'], type='scatter', panel=0, markersize=100, marker='^', color='g'),
-    #     mpf.make_addplot(df['sig_close'], type='scatter', panel=0, markersize=100, color='orange'),
-    #     # mpf.make_addplot(df['r_line_equity_curve'], color='purple', panel=0)
-    #     # mpf.make_addplot(df['rsi'],color='b',panel=0)
-    # ]
-    show(df)
+    draw_chart(df)
