@@ -1,6 +1,6 @@
 from flask import Flask
 
-from QAWeb.routes import routes
+from routes import routes
 
 app = Flask(__name__)
 routes(app)
