@@ -81,7 +81,7 @@ def signal_simple_bolling_para_list(m_list=range(10, 1000, 10), n_list=[i / 10 f
     return para_list
 
 # 自适应简单布林
-def signal_auto_bolling(df, para=[200]):
+def signal_adapt_bolling(df, para=[200]):
     """
     :param df:
     :param para: n, m
@@ -97,19 +97,16 @@ def signal_auto_bolling(df, para=[200]):
 
     # ===策略参数
     n = int(para[0])
-    # m = para[1]
-    # m = mean(abs[close-ma(n1)]/std(n1))
-
-    man1 = df['close'].rolling(n, min_periods=1).mean()
-    stdn1 = df['close'].rolling(n, min_periods=1).std(ddof=0)
-
-    m = abs((df['close'] - man1) / stdn1).mean()
 
     # ===计算指标
     # 计算均线
     df['median'] = df['close'].rolling(n, min_periods=1).mean()
     # 计算上轨、下轨道
     df['std'] = df['close'].rolling(n, min_periods=1).std(ddof=0)  # ddof代表标准差自由度
+
+    z_score = abs((df['close'] - df['median']) / df['std'])
+    m = z_score.rolling(window=n).max().shift(1)
+
     df['upper'] = df['median'] + m * df['std']
     df['lower'] = df['median'] - m * df['std']
 
@@ -141,11 +138,11 @@ def signal_auto_bolling(df, para=[200]):
     df['signal'] = temp['signal']
 
     # ===删除无关变量
-    df.drop(['median', 'std', 'upper', 'lower', 'signal_long', 'signal_short'], axis=1, inplace=True)
+    df.drop(['std', 'signal_long', 'signal_short'], axis=1, inplace=True)
 
     return df
 
-def signal_auto_bolling_para_list(n_list = range(20, 1000+20, 20)):
+def signal_adapt_bolling_para_list(n_list = range(20, 1000+20, 20)):
     """
          :param m_list:
          :param n_list:

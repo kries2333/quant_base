@@ -2,7 +2,7 @@ from flask import Flask
 
 from routes import routes
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 routes(app)
 
 if __name__ == '__main__':

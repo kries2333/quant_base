@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+   <head>
+      <meta charset="utf-8">
+      <title>Strategy Signals Viewer</title>
+      <!-- 引入 echarts.js -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.2.0-rc.2/echarts.min.js"></script>
+      <!-- 读取外部数据 -->
+      <script type="text/javascript" charset="utf-8" src="../js/echarts_data.js"></script>
+      <!-- 引入 jquery.tablesorter.js -->
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/css/theme.blue.min.css">
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.widgets.min.js"></script>
+      <style type="text/css">
+         td {
+         font-size: 10pt;
+         }
+      </style>
+   </head>
+   <body style="height: 100%; margin: 0">
+      <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+      <div id="main" style="width: 70%; height: 650px; float:left;"></div>
+      <div id="right" style="width: 30%; height: 650px; float:right; overflow:scroll;">
+         <script type="text/javascript">
+            $(function() {
+             // 动态创建开仓列表
+             var com_tab = document.getElementById('right');
+             var tbl = document.createElement('table');
+             tbl.id="table";
+             // table head
+             var thead = document.createElement('thead');
+             var tr = document.createElement('tr');
+             var th = document.createElement('th');
+             th.appendChild(document.createTextNode("信号"));
+             tr.appendChild(th);
+             var th = document.createElement('th');
+             th.appendChild(document.createTextNode("收益"));
+             tr.appendChild(th);
+             var th = document.createElement('th');
+             th.appendChild(document.createTextNode("开仓时间"));
+             tr.appendChild(th);
+             var th = document.createElement('th');
+             th.appendChild(document.createTextNode(" "));
+             tr.appendChild(th);
+             thead.appendChild(tr);
+
+             // table body
+             var tbdy = document.createElement('tbody');
+             for(j = 0, len = trade_data.length; j < len; j++) {
+               var tr = document.createElement('tr');
+               for(i = 0; i < 4; i++) {
+
+                   var td = document.createElement('td');
+                   td_text = trade_data[j][i];
+                   if (i == 0) {
+                     if (td_text == 1)
+                     {
+                       td_text = "开多";
+                     }
+                     else if (td_text == -1) {
+                       td_text = "开空";
+                     }
+                     td.appendChild(document.createTextNode(td_text));
+                     tr.appendChild(td);
+                   }
+                   else if (i == 3) {
+                     btn = document.createElement('input');
+                     btn.type = "button";
+                     btn.id=j;
+                     btn.onclick = repos;
+                     btn.value='查看';
+                     td.appendChild(btn);
+                     tr.appendChild(td);
+
+                   }
+                   else {
+                     td.appendChild(document.createTextNode(td_text));
+                     tr.appendChild(td);
+                   }
+
+               }
+
+                 tbdy.appendChild(tr);
+
+             }
+             tbl.appendChild(thead);
+             tbl.appendChild(tbdy);
+             com_tab.appendChild(tbl);
+
+             // 使用 tablesorter 将表格变成可排序
+             $('#table').tablesorter({
+               theme: 'blue',
+               widgets: ['zebra'],
+               headers : { 3 : { sorter: false } },
+               sortList: [ [2, 0] ]
+             });
+            });
+
+
+         </script>
+      </div>
+      <script type="text/javascript">
+         // 基于准备好的dom，初始化echarts实例
+         var myChart = echarts.init(document.getElementById('main'));
+
+         myChart.showLoading({
+           text: '正在加载数据...',
+           color: "#c23531",
+           textColor: "red",
+           maskColor: "rgba(255, 255, 255, 0.6)",
+           zlevel: 0
+         });
+
+         var upColor = '#ec0000';
+         var upBorderColor = '#8A0000';
+         var downColor = '#00da3c';
+         var downBorderColor = '#008F28';
+
+         // 处理 k 线数据
+         function splitData(rawData) {
+             var categoryData = [];
+             var values = [];
+             var boll_median = [];
+             var boll_upper = [];
+             var boll_lower = [];
+             for (var i = 0; i < rawData.length; i++) {
+                 categoryData.push(rawData[i].splice(0, 1)[0]);
+                 values.push(rawData[i].splice(0, 4));
+                 boll_median.push(rawData[i].splice(0, 1)[0]);
+                 boll_upper.push(rawData[i].splice(0, 1)[0]);
+                 boll_lower.push(rawData[i].splice(0, 1)[0]);
+             }
+             return {
+                 categoryData: categoryData,
+                 values: values,
+                 boll_median: boll_median,
+                 boll_upper: boll_upper,
+                 boll_lower: boll_lower
+             };
+         }
+         var data_dict = splitData(kdata)  // k 线数据
+
+         // 处理开平仓数据
+         function splitSgnlData(rawData) {
+           var markpoint_data = [];
+           for (var i = 0; i < rawData.length; i++) {
+             if (rawData[i][0] == 1)
+             {
+               markpoint_data.push({coord:[rawData[i][2],rawData[i][4]], label:{ normal: { formatter: function (param) { return "开多";}} }, itemStyle: {normal: {color: 'rgb(214,18,165)'}}});
+               markpoint_data.push({coord:[rawData[i][3],rawData[i][5]], label:{ normal: { formatter: function (param) { return "平仓";}} }, itemStyle: {normal: {color: 'rgb(224,136,11)'}}});
+             }
+             else {
+               markpoint_data.push({coord:[rawData[i][2],rawData[i][4]], label:{ normal: { formatter: function (param) { return "开空";}} }, itemStyle: {normal: {color: 'rgb(0,0,255)'}}});
+               markpoint_data.push({coord:[rawData[i][3],rawData[i][5]], label:{ normal: { formatter: function (param) { return "平仓";}} }, itemStyle: {normal: {color: 'rgb(224,136,11)'}}});
+             }
+           }
+
+           return markpoint_data;
+         }
+
+         // 开仓平仓数据
+         var markpoint_data = splitSgnlData(trade_data);
+
+
+         option = {
+             title: {
+                 text: chart_title,
+                 left: 0
+             },
+             tooltip: {
+                 trigger: 'axis',
+                 axisPointer: { type: 'cross' },
+             },
+             legend: {
+                 data: ['k线', 'median', 'upper', 'lower']
+             },
+             grid: [
+                 {
+                     left: '8%',
+                     right: '2%',
+                     bottom: 100
+                 },
+                {
+                     left: '8%',
+                     right: '2%',
+                     height: 'auto',
+                     bottom: 20
+                }
+             ],
+             // 横坐标：日期时间
+             xAxis: [
+                {
+                     gridIndex: 0,
+                     type: 'category',
+                     data: data_dict.categoryData,
+                     scale: true,
+                     boundaryGap : false,
+                     axisLine: {onZero: false},
+                     splitLine: {show: false},
+                     splitNumber: 20,
+                },
+               {
+                     gridIndex: 1,
+                     type: 'category',
+                     scale: true,
+                     boundaryGap: false,
+                     axisLine: {onZero: false},
+                     splitLine: {show: false},
+               }
+             ],
+             yAxis: [
+               {
+                     gridIndex: 0,
+                     scale: true,
+                     splitArea: {show: true}
+               },
+               {
+                     scale: true,
+                     gridIndex: 1,
+                     splitNumber: 2,
+                     axisLabel: {show: false},
+                     axisLine: {show: false},
+                     axisTick: {show: false},
+                     splitLine: {show: false},
+               }
+             ],
+             dataZoom: [
+               {
+                     type: 'inside',
+                     start: 50,
+                     end: 100
+               },
+               {
+                     show: true,
+                     type: 'slider',
+                     y: '90%',
+                     start: 50,
+                     end: 100
+               }
+             ],
+             series: [
+               // k 线
+               {
+                     name: 'k线',
+                     type: 'candlestick',
+                     xAxisIndex: 0,
+                     yAxisIndex: 0,
+                     data: data_dict.values,
+                     itemStyle: {
+                         normal: {
+                             color: upColor,
+                             color0: downColor,
+                             borderColor: upBorderColor,
+                             borderColor0: downBorderColor
+                         }
+                     },
+                     // 开平仓信号
+                     markPoint: {
+                         label: {
+                             normal: {
+                                 show:true,
+                                 formatter: function (param) {
+                                     return param != null ? Math.round(param.value) : '';
+                                 }
+                             }
+                         },
+                         data: markpoint_data,
+                         tooltip: {
+                             formatter: function (param) {
+                                 return param.name + '<br>' + (param.data.coord || '');
+                             }
+                         }
+                     },
+               },
+
+               // 布林中轨
+               {
+                     name: 'median',
+                     type: 'line',
+                     xAxisIndex: 0,
+                     yAxisIndex: 0,
+                     data: data_dict.boll_median,
+                     smooth: true,
+                     lineStyle: {
+                         normal: {opacity: 0.5}
+                     }
+               },
+               // 布林上轨
+               {
+                     name: 'upper',
+                     type: 'line',
+                     xAxisIndex: 0,
+                     yAxisIndex: 0,
+                     data: data_dict.boll_upper,
+                     smooth: true,
+                     lineStyle: {
+                         normal: {opacity: 0.5}
+                     }
+               },
+               // 布林下轨
+               {
+                     name: 'lower',
+                     type: 'line',
+                     xAxisIndex: 0,
+                     yAxisIndex: 0,
+                     data: data_dict.boll_lower,
+                     smooth: true,
+                     lineStyle: {
+                         normal: {opacity: 0.5}
+                     }
+               },
+             ]
+         };
+
+
+        // 使用刚指定的配置项和数据显示图表。
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+            myChart.hideLoading();
+            window.addEventListener("resize", function () {
+                myChart.resize();
+            });
+        }
+
+
+        // 定位开仓平仓位置
+        function repos() {
+            myChart.showLoading({
+                text: '正在加载数据...',
+                color: "#c23531",
+                textColor: "red",
+                maskColor: "rgba(255, 255, 255, 0.6)",
+                zlevel: 0
+            });
+
+            var newoption = myChart.getOption();
+            newoption.dataZoom = [
+                {
+                    type: 'inside',
+                    startValue: trade_data[this.id][2],
+                    endValue: trade_data[this.id][3]
+                },
+                {
+                    show: true,
+                    type: 'slider',
+                    y: '90%',
+                    startValue: trade_data[this.id][2],
+                    endValue: trade_data[this.id][3]
+                }
+            ];
+
+            if (newoption && typeof newoption === "object") {
+                myChart.setOption(newoption, true);
+                myChart.hideLoading();
+            }
+
+        }
+
+      </script>
+   </body>
+</html>

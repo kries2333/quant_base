@@ -1,4 +1,7 @@
-from echarts_data import get_echarts_html
+from flask import send_from_directory, render_template
+
+from QAStrategy.Statistics import transfer_equity_curve_to_trade
+from echarts_data import get_echarts_html, gen_echarts_data
 import pandas as pd
 import numpy as np
 from pprint import pprint,pformat
@@ -10,7 +13,7 @@ def routes(app):
     def index():
         symbol = 'ETH/USDT'
 
-        p = '../data/output/equity_curve/signal_simple_bolling_ETH_30t_[200, 1.7, 0.2].csv'
+        p = '../data/output/equity_curve/signal_adapt_bolling_ETH_15m_[300].csv'
         _all_data = pd.read_csv(p)
 
         _all_data = _all_data.sort_values(by='candle_begin_time', ascending=False)
@@ -47,3 +50,19 @@ def routes(app):
 
         _html = get_echarts_html(symbol, str_df_list, str_df_boll_list, signal)
         return _html
+
+    @app.route('/local')
+    def local():
+        symbol = 'ETH/USDT'
+        signal_name = 'signal_adapt_bolling'
+        rule_type = '15m'
+
+        p = '../data/output/equity_curve/signal_adapt_bolling_ETH_15min_[300].csv'
+        _all_data = pd.read_csv(p)
+
+        trade = transfer_equity_curve_to_trade(_all_data)
+        print('逐笔交易：\n', trade)
+
+        gen_echarts_data(_all_data, trade, signal_name, symbol, rule_type)
+
+        return app.send_static_file('html/strategy_signals_viewer.html')
