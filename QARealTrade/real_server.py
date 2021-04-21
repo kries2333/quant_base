@@ -37,7 +37,7 @@ time_interval = '15m'
 
 def start():
     # =====获取需要交易币种的历史数据=====
-    max_len = 1000  # 设定最多收集多少根K线，okex不能超过1440根
+    max_len = 500  # 设定最多收集多少根K线，okex不能超过1440根
     symbol_candle_data = dict()  # 用于存储K线数据
     # 遍历获取币种历史数据
     for symbol in symbol_config.keys():
