@@ -105,6 +105,7 @@ def signal_adapt_bolling_mod1_para_list(n_list=range(20, 1000+20, 20), bias_pct_
         """
     print('参数遍历范围：')
     print('n_list', list(n_list))
+    print('bias_pct_list', list(bias_pct_list))
 
     para_list = []
     for bias_pct in bias_pct_list:
