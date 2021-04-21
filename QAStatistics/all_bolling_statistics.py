@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 
 # 策略名称
-strategy_name = 'signal_simple_bolling'  # signal_simple_bolling signal_xingbuxing
+strategy_name = 'signal_auto_bolling'  # signal_simple_bolling signal_xingbuxing
 # 每个币种、时间周期的策略数量
 strategy_num = 3
 

@@ -99,7 +99,7 @@ def draw_chart(df):
 
 if __name__ == "__main__":
     # =====读入数据
-    df = pd.read_csv('../data/output/equity_curve/signal_simple_bolling_ETH_1h_[100, 3.5].csv')
+    df = pd.read_csv('../data/output/equity_curve/signal_kries_ETH_15t_[440, 3.3, 0.15].csv')
 
     title = '单一策略数据显示'
 

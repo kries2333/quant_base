@@ -7,10 +7,10 @@ from QAStrategy.Evaluate import equity_curve_for_OKEx_USDT_future_next_open
 from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evaluate
 
-symbol = 'ETH-USDT_5m'
-para = [200, 1.7, 0.2]
-signal_name = 'signal_simple_bolling'
-rule_type = '30t'
+symbol = 'BTC-USDT_5m'
+para = [100, 1.7, 0.11]
+signal_name = 'signal_kries'
+rule_type = '1h'
 
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
 c_rate = 5 / 10000  # 手续费，commission fees，默认为万分之5。不同市场手续费的收取方法不同，对结果有影响。比如和股票就不一样。
