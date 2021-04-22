@@ -49,7 +49,7 @@ def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     return rtn
 
 if __name__ == '__main__':
-    signal_name = 'signal_adapt_bolling_mod1'
+    signal_name = 'signal_mean_bolling_reverse_with_delay'
     for symbol in ['BTC', 'ETH']:
         for rule_type in ['1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
