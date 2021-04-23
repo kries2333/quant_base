@@ -256,19 +256,28 @@ def signal_double_bolling(df, para=[20, 120]):
 
     # ===策略参数
     n1 = int(para[0])
-    m1 = 2.5
-
     n2 = int(para[1])
-    m2 = 2.25
 
     median1 = df['close'].rolling(n1, min_periods=1).mean()
     median2 = df['close'].rolling(n2, min_periods=1).mean()
 
+    volume = df['volume'].rolling(n1, min_periods=1).mean()
+
     std1 = df['close'].rolling(n1, min_periods=1).std(ddof=0)
     std2 = df['close'].rolling(n2, min_periods=1).std(ddof=0)
 
+    z_score = abs((df['close'] - median1) / std1)
+    m1 = z_score.rolling(window=n1).max().shift(1)
+
+    z_score = abs((df['close'] - median2) / std2)
+    m2 = z_score.rolling(window=n2).max().shift(1)
+
     upper1 = median1 + m1 * std1
     lower1 = median1 - m1 * std1
+
+    df['upper'] = upper1
+    df['lower'] = lower1
+    df['median'] = median1
 
     upper2 = median2 + m2 * std2
     lower2 = median2 - m2 * std2
@@ -286,7 +295,8 @@ def signal_double_bolling(df, para=[20, 120]):
     condition2 = df['close'].shift(1) >= median1.shift(1)
     condition3 = df['close'] < median2
     condition4 = df['close'].shift(1) >= median2.shift(1)
-    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition3 & condition4, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
     condition1 = df['close'] < lower1  # 当前K线的收盘价 < 下轨
@@ -300,7 +310,8 @@ def signal_double_bolling(df, para=[20, 120]):
     condition2 = df['close'].shift(1) <= median1.shift(1)  # 之前K线的收盘价 <= 中轨
     condition3 = df['close'] < median2
     condition4 = df['close'].shift(1) >= median2.shift(1)
-    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition3 & condition4, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 合并做多做空信号，去除重复信号
     df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
@@ -313,8 +324,8 @@ def signal_double_bolling(df, para=[20, 120]):
 
     return df
 
-def signal_double_bolling_para_list(m_list=range(10, 100, 2), n_list=range(100, 1000, 20)):
-    print('参数遍历范围：')
+def signal_double_bolling_para_list(m_list=range(10, 100, 2), n_list=range(100, 1000+20, 20)):
+    print('参数遍历范围：count', len(m_list) * len(n_list))
     print('m_list', list(m_list))
     print('n_list', list(n_list))
 

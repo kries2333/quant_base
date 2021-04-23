@@ -13,17 +13,17 @@ def routes(app):
     def index():
         symbol = 'ETH/USDT'
 
-        p = '../data/output/equity_curve/signal_adapt_bolling_ETH_15m_[300].csv'
+        p = '../data/output/equity_curve/signal_double_bolling_ETH_15min_[42, 860].csv'
         _all_data = pd.read_csv(p)
 
         _all_data = _all_data.sort_values(by='candle_begin_time', ascending=False)
         last_time = _all_data.loc[0, 'candle_begin_time'] # 历史数据文件中，最近的一次时间
         df = _all_data.copy()
         df['candle_begin_time'] = df['candle_begin_time'].values.tolist()
-        df['volume'] = df['b_bar_quote_volume']
+        df['volume'] = df['quote_volume']
 
         _df = df[['candle_begin_time', 'open', 'close', 'low', 'high']]
-        _df_boll = df[['line_upper', 'line_median', 'line_lower', 'volume']]
+        _df_boll = df[['upper', 'median', 'lower', 'volume']]
         _df_list = np.array(_df).tolist()
         _df_boll_list= np.array(_df_boll).transpose().tolist()
         str_df_list = pformat(_df_list)
@@ -57,7 +57,7 @@ def routes(app):
         signal_name = 'signal_adapt_bolling'
         rule_type = '15m'
 
-        p = '../data/output/equity_curve/signal_adapt_bolling_ETH_15min_[300].csv'
+        p = '../data/output/equity_curve/signal_double_bolling_ETH_15min_[42, 860].csv'
         _all_data = pd.read_csv(p)
 
         trade = transfer_equity_curve_to_trade(_all_data)

@@ -2,14 +2,14 @@ import pandas as pd
 from datetime import timedelta
 
 # =====手工设定策略参数
-from QAStrategy import Signals
+from QAStrategy import Signals_kries
 from QAStrategy.Evaluate import equity_curve_for_OKEx_USDT_future_next_open
 from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evaluate
 
 symbol = 'ETH-USDT_5m'
-para = [300]
-signal_name = 'signal_adapt_bolling'
+para = [42, 860]
+signal_name = 'signal_double_bolling'
 rule_type = '15min'
 
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     df.reset_index(inplace=True, drop=True)
 
     # =====计算交易信号
-    df = getattr(Signals, signal_name)(df, para=para)
+    df = getattr(Signals_kries, signal_name)(df, para=para)
 
     # =====计算实际持仓
     df = position_for_OKEx_future(df)
