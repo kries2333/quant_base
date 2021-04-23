@@ -91,8 +91,8 @@ def real_signal_simple_bolling(df, now_pos, avg_price, para=[200, 2]):
 
     return signal
 
-# 布林+bais自适应实盘交易信号
-def real_signal_adapt_bolling_mod1(df, now_pos, avg_price, para=[200, 0.3]):
+
+def real_signal_simple_bolling_bias(df, now_pos, avg_price, para=[200, 0.3]):
     """
     实盘产生布林线策略信号的函数，和历史回测函数相比，计算速度更快。
     布林线中轨：n天收盘价的移动平均线
@@ -109,7 +109,7 @@ def real_signal_adapt_bolling_mod1(df, now_pos, avg_price, para=[200, 0.3]):
     # n代表取平均线和标准差的参数
     # m代表标准差的倍数
     n = int(para[0])
-    bias_pct = float(para[1])
+    bias_pct = para[1]
 
     # ===计算指标
     # 计算均线
@@ -121,9 +121,16 @@ def real_signal_adapt_bolling_mod1(df, now_pos, avg_price, para=[200, 0.3]):
     std = df.iloc[-1]['std']
     std2 = df.iloc[-2]['std']
 
-    z_score = abs((df['close'] - median) / std)
-    m = z_score.rolling(window=n).max().shift(1)
+    z_score = abs((df['close'] - df['median']) / df['std'])
+    m = z_score.rolling(window=n).max().shift(1).iloc[-1]
 
+    print("平均线 n = ", n)
+    print("标准差的倍数 m = ", m)
+
+    # ===寻找交易信号
+    signal = None
+    close = df.iloc[-1]['close']
+    close2 = df.iloc[-2]['close']
 
     # 计算上轨、下轨道
     upper = median + m * std
@@ -132,12 +139,8 @@ def real_signal_adapt_bolling_mod1(df, now_pos, avg_price, para=[200, 0.3]):
     lower2 = median2 - m * std2
 
     # 计算bias
-    bias = df['close'] / median - 1
+    bias = close / median - 1
 
-    # ===寻找交易信号
-    signal = None
-    close = df.iloc[-1]['close']
-    close2 = df.iloc[-2]['close']
     # 找出做多信号
     if (close > upper) and (close2 <= upper2) and (bias < bias_pct):
         signal = 1
