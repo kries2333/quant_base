@@ -67,8 +67,8 @@ def start():
         # =计算每个币种的交易信号
         symbol_signal = calculate_signal(symbol_info, symbol_config, symbol_candle_data)
 
-        logging.info('symbol_info:', symbol_info)
-        logging.info('本周期交易计划:', symbol_signal)
+        logging.info(symbol_info)
+        logging.info(symbol_signal)
 
         time.sleep(10)
 
