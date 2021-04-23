@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-
-import Signals
+from QARealTrade import Signals
 
 def calculate_signal(symbol_info, symbol_config, symbol_candle_data):
     # 输出变量

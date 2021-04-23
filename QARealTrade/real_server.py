@@ -1,9 +1,9 @@
 import time
-from Config import *
-from Function import *
+from QARealTrade.Config import *
+from QARealTrade.Function import *
 import pandas as pd
 
-from QAMarket.QAOkexMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data
+from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
