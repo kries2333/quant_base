@@ -2,7 +2,7 @@ import time
 from QARealTrade.Config import *
 from QARealTrade.Function import *
 import pandas as pd
-
+import logging
 from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data
 
 pd.set_option('display.max_rows', 1000)
@@ -10,6 +10,12 @@ pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
 # 设置命令行输出时的列对齐功能
 pd.set_option('display.unicode.ambiguous_as_wide', True)
 pd.set_option('display.unicode.east_asian_width', True)
+
+logging.basicConfig(level=logging.DEBUG,#控制台打印的日志级别
+                    filename='210423.log',
+                    filemode='a',##模式，有w和a，w就是写模式，每次都会重新写日志，覆盖之前的日志
+                    #a是追加模式，默认如果不写的话，就是追加模式
+                    )
 
 # =交易所配置
 OKEX_CONFIG = {
@@ -56,13 +62,13 @@ def start():
         df = df.iloc[-max_len:]  # 保持最大K线数量不会超过max_len个
         df.reset_index(drop=True, inplace=True)
         symbol_candle_data[symbol] = df
-        print(df.iloc[-1:])
+        logging.debug(df.iloc[-1:])
 
         # =计算每个币种的交易信号
         symbol_signal = calculate_signal(symbol_info, symbol_config, symbol_candle_data)
 
-        print('\nsymbol_info:\n', symbol_info)
-        print('本周期交易计划:', symbol_signal)
+        logging.debug(symbol_info)
+        logging.debug(symbol_signal)
 
         time.sleep(10)
 
