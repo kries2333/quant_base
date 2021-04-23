@@ -1,19 +1,6 @@
 import json
 import time
-from hashlib import sha256
-
 import websocket
-import base64
-import hmac
-
-
-def get_sign(data, key):
-    key = key.encode('utf-8')
-    message = data.encode('utf-8')
-    sign = base64.b64encode(hmac.new(key, message, digestmod=sha256).digest())
-    sign = str(sign, 'utf-8')
-    print(sign)
-    return sign
 
 def loginData():
     timestamp = time.time()

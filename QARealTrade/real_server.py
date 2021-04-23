@@ -24,14 +24,14 @@ OKEX_CONFIG = {
 # =====配置交易相关参数=====
 # 更新需要交易的合约、策略参数、下单量等配置信息
 symbol_config = {
-    'eth-usdt': {'instrument_id': 'ETH-USDT-210423',  # 合约代码，当更换合约的时候需要手工修改
+    'eth-usdt': {'instrument_id': 'ETH-USDT-210430',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
                  'para': [380, 0.09]}  # 策略参数
 }
 
 def start():
-    symbol = 'ETH-USDT-210423'
+    symbol = 'ETH-USDT-210430'
     time_interval = '15m'
     max_len = 1000
     symbol_candle_data = dict()  # 用于存储K线数据
