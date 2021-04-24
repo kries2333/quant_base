@@ -5,12 +5,8 @@ import requests
 import datetime
 from urllib.parse import urljoin
 
-from QAUilt.common import get_sign
-
 OKEx_base_url = 'https://www.okex.com'
 
-apikey = "ca34b533-4bd0-457a-bee7-b5a6eaf89da8"
-passwd = "Tt84521485"
 
 def fetch_ohlcv(symbol, since=None, timeframe='1m', limit=100):
     # 请求数据
@@ -33,16 +29,8 @@ def fetch_ohlcv(symbol, since=None, timeframe='1m', limit=100):
                     "limit": limit
                 }
 
-
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    secret = "C07914C0F473535F92045FE10A4D6BEF"
-    sign = get_sign((str(timestamp) + 'GET' + '/api/v5/market/candles'), secret)
-
     retries = 1
-    headers = {"OK-ACCESS-KEY": apikey,
-               "OK-ACCESS-SIGN": sign,
-               "OK-ACCESS-TIMESTAMP": timestamp,
-               "OK-ACCESS-PASSPHRASE": passwd}
+
 
     while (retries != 0):
         try:
