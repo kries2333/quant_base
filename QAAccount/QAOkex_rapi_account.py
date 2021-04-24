@@ -147,3 +147,4 @@ if __name__ == "__main__":
     # 通过交易所接口获取合约账户持仓信息
     future_position = fetch_future_position()
     print(future_position)
+    print("")
