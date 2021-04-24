@@ -4,6 +4,7 @@ from QARealTrade.Function import *
 import pandas as pd
 import logging
 from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data
+from QARealTrade.Uity import send_dingding_msg, dingding_report_every_loop, sleep_until_run_time
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
@@ -36,6 +37,8 @@ symbol_config = {
                  'para': [380, 0.09]}  # 策略参数
 }
 
+long_sleep_time = 10
+
 def start():
     symbol = 'ETH-USDT-210430'
     time_interval = '15m'
@@ -50,6 +53,9 @@ def start():
         # 初始化symbol_info，在每次循环开始时都初始化
         symbol_info_columns = ['账户权益', '持仓方向', '持仓量', '持仓收益率', '持仓收益', '持仓均价', '当前价格', '最大杠杆']
         symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
+
+        # =获取策略执行时间，并sleep至该时间
+        run_time = sleep_until_run_time(time_interval)
 
         # =并行获取所有币种最近数据
         candle_num = 10
@@ -70,7 +76,13 @@ def start():
         logging.info(symbol_info)
         logging.info(symbol_signal)
 
-        time.sleep(10)
+        # 下单
+        symbol_order = pd.DataFrame()
+
+        # 发送钉钉消息
+        dingding_report_every_loop(symbol_info, symbol_signal, symbol_order, run_time)
+
+        time.sleep(long_sleep_time)
 
 if __name__ == '__main__':
     while True:
