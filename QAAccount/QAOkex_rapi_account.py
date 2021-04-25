@@ -106,45 +106,53 @@ def okex_fetch_future_position():
 
 # 暂时只支持okex
 def fetch_future_account():
-    data = okex_futures_get_accounts()
+    future_info = okex_futures_get_accounts()
 
-    symbol_info = dict()
-    for v in data:
-        details = v['details']
-        for d in details:
-            symbol_info['账户权益'] = d['eq']
-
-    return symbol_info
+    data = future_info[0]['details']
+    df = pd.DataFrame(data, dtype=float).T  # 将数据转化为df格式
+    return df
 
 def fetch_future_position():
     data = okex_fetch_future_position()
 
-    symbol_position = dict()
-    for v in data:
-        symbol_position['最大杠杆'] = v['lever']
-        symbol_position['开仓价格'] = v['avgPx']
-        if v['posSide'] == "long":
-            symbol_position['多头持仓量'] = v['pos']
-            symbol_position['多头均价'] = v['avgPx']
-            symbol_position['多头收益率'] = v['uplRatio']
-            symbol_position['多头收益'] = v['upl']
-        elif v['posSide'] == "short":
-            symbol_position['空头持仓量'] = v['pos']
-            symbol_position['空头均价'] = v['avgPx']
-            symbol_position['空头收益率'] = v['uplRatio']
-            symbol_position['空头收益'] = v['upl']
+    df = pd.DataFrame(data, dtype=float)
 
-    return symbol_position
+    return df
 
 
 def update_symbol_info(symbol_info, symbol_config):
-    future_account = fetch_future_account()
-
-if __name__ == "__main__":
     # 通过交易所接口获取合约账户信息
     future_account = fetch_future_account()
 
     # 通过交易所接口获取合约账户持仓信息
     future_position = fetch_future_position()
-    print(future_position)
-    print("")
+
+    if future_account.empty is False:
+        symbol_info['账户权益'] = future_account[0]['availEq']
+
+    if future_position.empty is False:
+        # 从future_position中获取原始数据
+        symbol_info['最大杠杆'] = future_position['level']
+        symbol_info['当前价格'] = future_position['last']
+
+        symbol_info['多头持仓量'] = future_position['long_qty']
+        symbol_info['多头均价'] = future_position['long_avg_cost']
+        symbol_info['多头收益率'] = future_position['long_pnl_ratio']
+        symbol_info['多头收益'] = future_position['long_pnl']
+
+        symbol_info['空头持仓量'] = future_position['short_qty']
+        symbol_info['空头均价'] = future_position['short_avg_cost']
+        symbol_info['空头收益率'] = future_position['short_pnl_ratio']
+        symbol_info['空头收益'] = future_position['short_pnl']
+
+    return symbol_info
+
+if __name__ == "__main__":
+    # =获取持仓数据
+    # 初始化symbol_info，在每次循环开始时都初始化
+    symbol_info_columns = ['账户权益', '持仓方向', '持仓量', '持仓收益率', '持仓收益', '持仓均价', '当前价格', '最大杠杆']
+    symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
+
+    # 通过交易所接口获取合约账户信息
+    symbol_info = update_symbol_info()
+    print(symbol_info)

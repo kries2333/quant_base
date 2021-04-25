@@ -1,4 +1,6 @@
 import time
+
+from QAAccount.QAOkex_rapi_account import update_symbol_info
 from QARealTrade.Config import *
 from QARealTrade.Function import *
 import pandas as pd
@@ -46,13 +48,17 @@ def start():
     symbol_candle_data = dict()  # 用于存储K线数据
 
     # 获取的历史数据
-    for symbol in symbol_config.keys():
-        symbol_candle_data[symbol] = fetch_okex_symbol_history_candle_data(symbol_config[symbol]['instrument_id'], time_interval, max_len)
+    # for symbol in symbol_config.keys():
+        # symbol_candle_data[symbol] = fetch_okex_symbol_history_candle_data(symbol_config[symbol]['instrument_id'], time_interval, max_len)
 
     while True:
         # 初始化symbol_info，在每次循环开始时都初始化
         symbol_info_columns = ['账户权益', '持仓方向', '持仓量', '持仓收益率', '持仓收益', '持仓均价', '当前价格', '最大杠杆']
         symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
+
+        # 更新账户信息symbol_info
+        symbol_info = update_symbol_info(symbol_info, symbol_config)
+        print('\nsymbol_info:\n', symbol_info, '\n')
 
         # =获取策略执行时间，并sleep至该时间
         run_time = sleep_until_run_time(time_interval)
