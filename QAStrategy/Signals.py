@@ -64,7 +64,7 @@ def signal_simple_bolling(df, para=[200, 2]):
 
 
 # 策略参数组合
-def signal_simple_bolling_para_list(m_list=range(10, 1000, 10), n_list=[i / 10 for i in list(np.arange(5, 50, 1))]):
+def signal_simple_bolling_para_list(m_list=range(20, 1000+20, 20), n_list=[i / 10 for i in list(np.arange(5, 50, 5))]):
     """
     产生布林 策略的参数范围
     :param m_list:

@@ -1,11 +1,12 @@
 import time
 
 from QAAccount.QAOkex_rapi_account import update_symbol_info
+from QAOrder.QAOrder_okex import okex_future_place_order, single_threading_place_order
 from QARealTrade.Config import *
 from QARealTrade.Function import *
 import pandas as pd
 import logging
-from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data
+from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data, single_threading_get_data
 from QARealTrade.Uity import send_dingding_msg, dingding_report_every_loop, sleep_until_run_time
 
 pd.set_option('display.max_rows', 1000)
@@ -36,15 +37,15 @@ symbol_config = {
     'ETH-USDT': {'instrument_id': 'ETH-USDT-210430',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
-                 'para': [380, 0.09]}  # 策略参数
+                 'para': [20, 0.09]}  # 策略参数
 }
 
 long_sleep_time = 10
 
 def start():
     symbol = 'ETH-USDT'
-    time_interval = '15m'
-    max_len = 1000
+    time_interval = '5m'
+    max_len = 200
     symbol_candle_data = dict()  # 用于存储K线数据
 
     # 获取的历史数据
@@ -65,7 +66,9 @@ def start():
 
         # =并行获取所有币种最近数据
         candle_num = 10
-        recent_candle_data = okex_fetch_candle_data(symbol=symbol_config[symbol]['instrument_id'], time_interval=time_interval, limit=candle_num)
+        recent_candle_data = single_threading_get_data(symbol_info, symbol_config, time_interval, run_time, candle_num)
+        for symbol in symbol_config.keys():
+            print(recent_candle_data[symbol].tail(2))
 
         # 把历史数据与最新数据合并
         df = symbol_candle_data[symbol].append(recent_candle_data, ignore_index=True)
@@ -74,16 +77,28 @@ def start():
         df = df.iloc[-max_len:]  # 保持最大K线数量不会超过max_len个
         df.reset_index(drop=True, inplace=True)
         symbol_candle_data[symbol] = df
-        logging.info(df.iloc[-1:])
 
         # =计算每个币种的交易信号
         symbol_signal = calculate_signal(symbol_info, symbol_config, symbol_candle_data)
-
-        logging.info(symbol_info)
-        logging.info(symbol_signal)
+        print('\nsymbol_info:\n', symbol_info)
+        print('本周期交易计划:', symbol_signal)
 
         # 下单
         symbol_order = pd.DataFrame()
+        if symbol_signal:
+            symbol_order = single_threading_place_order(symbol_info, symbol_config, symbol_signal)  # 单线程下单
+            print('下单记录：\n', symbol_order)
+
+            # 更新订单信息，查看是否完全成交
+            time.sleep(short_sleep_time)  # 休息一段时间再更新订单信息
+            # symbol_order = update_order_info(exchange, symbol_config, symbol_order)
+            print('更新下单记录：', '\n', symbol_order)
+
+        # 重新更新账户信息symbol_info
+        time.sleep(long_sleep_time)  # 休息一段时间再更新
+        symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)
+        symbol_info = update_symbol_info(symbol_info, symbol_config)
+        print('\nsymbol_info:\n', symbol_info, '\n')
 
         # 发送钉钉消息
         dingding_report_every_loop(symbol_info, symbol_signal, symbol_order, run_time)
@@ -95,5 +110,5 @@ if __name__ == '__main__':
         try:
             start()
         except Exception as e:
-            print("error:", e)
+            print(e)
             time.sleep(long_sleep_time)

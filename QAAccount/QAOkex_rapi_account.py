@@ -7,18 +7,8 @@ import pandas as pd
 
 from urllib.parse import urljoin
 from QAUilt.common import get_sign
+from QAUilt.config import *
 
-OKEx_base_url = 'https://www.okex.com'
-
-apikey = "ca34b533-4bd0-457a-bee7-b5a6eaf89da8"
-passwd = "Tt84521485"
-secret = "C07914C0F473535F92045FE10A4D6BEF"
-
-account = {
-    'balance': [
-        {'总金额': ""}
-    ]
-}
 
 def okex_futures_get_accounts():
 
@@ -33,7 +23,8 @@ def okex_futures_get_accounts():
         requestPath
     )
 
-    headers = {"OK-ACCESS-KEY": apikey,
+    headers = {"Content-Type": "application/json",
+               "OK-ACCESS-KEY": apikey,
                "OK-ACCESS-SIGN": sign,
                "OK-ACCESS-TIMESTAMP": timestamp,
                "OK-ACCESS-PASSPHRASE": passwd}
@@ -75,7 +66,8 @@ def okex_fetch_future_position():
         requestPath
     )
 
-    headers = {"OK-ACCESS-KEY": apikey,
+    headers = {"Content-Type": "application/json",
+                "OK-ACCESS-KEY": apikey,
                "OK-ACCESS-SIGN": sign,
                "OK-ACCESS-TIMESTAMP": timestamp,
                "OK-ACCESS-PASSPHRASE": passwd}
@@ -130,8 +122,8 @@ def update_symbol_info(symbol_info, symbol_config):
     if future_account.empty is False:
         symbol_info['账户权益'] = future_account[0]['availEq']
 
-    position = future_position.loc[0]
     if future_position.empty is False:
+        position = future_position.loc[0]
         # 从future_position中获取原始数据
         symbol_info['最大杠杆'] = position['lever']
         symbol_info['当前价格'] = position['last']
@@ -155,29 +147,33 @@ def update_symbol_info(symbol_info, symbol_config):
             symbol_info['空头收益率'] = position['uplRatio']
             symbol_info['空头收益'] = position['upl']
 
-    # 整理原始数据，计算需要的数据
-    # 多头、空头的index
-    long_index = symbol_info[symbol_info['多头持仓量'] > 0].index
-    short_index = symbol_info[symbol_info['空头持仓量'] > 0].index
-    # 账户持仓方向
-    symbol_info.loc[long_index, '持仓方向'] = 1
-    symbol_info.loc[short_index, '持仓方向'] = -1
-    symbol_info['持仓方向'].fillna(value=0, inplace=True)
-    # 账户持仓量
-    symbol_info.loc[long_index, '持仓量'] = symbol_info['多头持仓量']
-    symbol_info.loc[short_index, '持仓量'] = symbol_info['空头持仓量']
-    # 持仓均价
-    symbol_info.loc[long_index, '持仓均价'] = symbol_info['多头均价']
-    symbol_info.loc[short_index, '持仓均价'] = symbol_info['空头均价']
-    # 持仓收益率
-    symbol_info.loc[long_index, '持仓收益率'] = symbol_info['多头收益率']
-    symbol_info.loc[short_index, '持仓收益率'] = symbol_info['空头收益率']
-    # 持仓收益
-    symbol_info.loc[long_index, '持仓收益'] = symbol_info['多头收益']
-    symbol_info.loc[short_index, '持仓收益'] = symbol_info['空头收益']
-    # 删除不必要的列
-    symbol_info.drop(['多头持仓量', '多头均价', '空头持仓量', '空头均价', '多头收益率', '空头收益率', '多头收益', '空头收益'],
-                     axis=1, inplace=True)
+        # 整理原始数据，计算需要的数据
+        # 多头、空头的index
+        long_index = symbol_info[symbol_info['多头持仓量'] > 0].index
+        short_index = symbol_info[symbol_info['空头持仓量'] > 0].index
+        # 账户持仓方向
+        symbol_info.loc[long_index, '持仓方向'] = 1
+        symbol_info.loc[short_index, '持仓方向'] = -1
+        symbol_info['持仓方向'].fillna(value=0, inplace=True)
+        # 账户持仓量
+        symbol_info.loc[long_index, '持仓量'] = symbol_info['多头持仓量']
+        symbol_info.loc[short_index, '持仓量'] = symbol_info['空头持仓量']
+        # 持仓均价
+        symbol_info.loc[long_index, '持仓均价'] = symbol_info['多头均价']
+        symbol_info.loc[short_index, '持仓均价'] = symbol_info['空头均价']
+        # 持仓收益率
+        symbol_info.loc[long_index, '持仓收益率'] = symbol_info['多头收益率']
+        symbol_info.loc[short_index, '持仓收益率'] = symbol_info['空头收益率']
+        # 持仓收益
+        symbol_info.loc[long_index, '持仓收益'] = symbol_info['多头收益']
+        symbol_info.loc[short_index, '持仓收益'] = symbol_info['空头收益']
+        # 删除不必要的列
+        symbol_info.drop(['多头持仓量', '多头均价', '空头持仓量', '空头均价', '多头收益率', '空头收益率', '多头收益', '空头收益'],
+                         axis=1, inplace=True)
+
+    else:
+        # 当future_position为空时，将持仓方向的控制填充为0，防止之后判定信号时出错
+        symbol_info['持仓方向'].fillna(value=0, inplace=True)
 
     return symbol_info
 
