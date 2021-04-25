@@ -62,13 +62,13 @@ def futures_post_order(params):
 
     return None
 
-def okex_future_place_order(symbol_info, symbol_config, symbol_signal, symbol):
+def okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount, symbol):
 
     # 下单参数
     params = {
         "instId": symbol_config[symbol]["instrument_id"],  # 合约代码
         "tdMode": "cross", #交易模式 保证金模式：isolated：逐仓 ；cross：全仓 非保证金模式：cash：非保证金
-        "ccy": "USDT",
+        # "ccy": "USDT",
         "ordType": "limit"
     }
     for order_type in symbol_signal[symbol]:
@@ -76,17 +76,18 @@ def okex_future_place_order(symbol_info, symbol_config, symbol_signal, symbol):
             params['side'] = 'buy'
             params['posSide'] = 'long'
         elif order_type == -1:
-            params['side'] = 'buy'
+            params['side'] = 'sell'
             params['posSide'] = 'short'
         elif order_type == 0:
             params['side'] = 'sell'
+            params['posSide'] = 'long'
 
         params['px'] = str(cal_order_price(symbol_info.at[symbol, "信号价格"], order_type))
         params['sz'] = str(cal_order_size(symbol, symbol_info, symbol_config[symbol]['leverage']))
         order_info = futures_post_order(params)
         print(order_info)
 
-def single_threading_place_order(exchange, symbol_info, symbol_config, symbol_signal, max_try_amount=5):
+def single_threading_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount=5):
     # 函数输出变量
     symbol_order = pd.DataFrame()
 
@@ -95,7 +96,7 @@ def single_threading_place_order(exchange, symbol_info, symbol_config, symbol_si
         # 遍历有交易信号的交易对
         for symbol in symbol_signal.keys():
             # 下单
-            _, order_id_list = okex_future_place_order(exchange, symbol_info, symbol_config, symbol_signal, max_try_amount, symbol)
+            _, order_id_list = okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount, symbol)
 
             # 记录
             for order_id in order_id_list:
