@@ -130,29 +130,64 @@ def update_symbol_info(symbol_info, symbol_config):
     if future_account.empty is False:
         symbol_info['账户权益'] = future_account[0]['availEq']
 
+    position = future_position.loc[0]
     if future_position.empty is False:
         # 从future_position中获取原始数据
-        symbol_info['最大杠杆'] = future_position['level']
-        symbol_info['当前价格'] = future_position['last']
+        symbol_info['最大杠杆'] = position['lever']
+        symbol_info['当前价格'] = position['last']
+        symbol_info['多头持仓量'] = 0
+        symbol_info['多头均价'] = 0
+        symbol_info['多头收益率'] = 0
+        symbol_info['多头收益'] = 0
+        symbol_info['空头持仓量'] = 0
+        symbol_info['空头均价'] = 0
+        symbol_info['空头收益率'] = 0
+        symbol_info['空头收益'] = 0
 
-        symbol_info['多头持仓量'] = future_position['long_qty']
-        symbol_info['多头均价'] = future_position['long_avg_cost']
-        symbol_info['多头收益率'] = future_position['long_pnl_ratio']
-        symbol_info['多头收益'] = future_position['long_pnl']
+        if position['posSide'] == "long":
+            symbol_info['多头持仓量'] = position['pos']
+            symbol_info['多头均价'] = position['avgPx']
+            symbol_info['多头收益率'] = position['uplRatio']
+            symbol_info['多头收益'] = position['upl']
+        elif future_position['posSide'] == "short":
+            symbol_info['空头持仓量'] = position['pos']
+            symbol_info['空头均价'] = position['avgPx']
+            symbol_info['空头收益率'] = position['uplRatio']
+            symbol_info['空头收益'] = position['upl']
 
-        symbol_info['空头持仓量'] = future_position['short_qty']
-        symbol_info['空头均价'] = future_position['short_avg_cost']
-        symbol_info['空头收益率'] = future_position['short_pnl_ratio']
-        symbol_info['空头收益'] = future_position['short_pnl']
+    # 整理原始数据，计算需要的数据
+    # 多头、空头的index
+    long_index = symbol_info[symbol_info['多头持仓量'] > 0].index
+    short_index = symbol_info[symbol_info['空头持仓量'] > 0].index
+    # 账户持仓方向
+    symbol_info.loc[long_index, '持仓方向'] = 1
+    symbol_info.loc[short_index, '持仓方向'] = -1
+    symbol_info['持仓方向'].fillna(value=0, inplace=True)
+    # 账户持仓量
+    symbol_info.loc[long_index, '持仓量'] = symbol_info['多头持仓量']
+    symbol_info.loc[short_index, '持仓量'] = symbol_info['空头持仓量']
+    # 持仓均价
+    symbol_info.loc[long_index, '持仓均价'] = symbol_info['多头均价']
+    symbol_info.loc[short_index, '持仓均价'] = symbol_info['空头均价']
+    # 持仓收益率
+    symbol_info.loc[long_index, '持仓收益率'] = symbol_info['多头收益率']
+    symbol_info.loc[short_index, '持仓收益率'] = symbol_info['空头收益率']
+    # 持仓收益
+    symbol_info.loc[long_index, '持仓收益'] = symbol_info['多头收益']
+    symbol_info.loc[short_index, '持仓收益'] = symbol_info['空头收益']
+    # 删除不必要的列
+    symbol_info.drop(['多头持仓量', '多头均价', '空头持仓量', '空头均价', '多头收益率', '空头收益率', '多头收益', '空头收益'],
+                     axis=1, inplace=True)
 
     return symbol_info
 
 if __name__ == "__main__":
-    # =获取持仓数据
-    # 初始化symbol_info，在每次循环开始时都初始化
-    symbol_info_columns = ['账户权益', '持仓方向', '持仓量', '持仓收益率', '持仓收益', '持仓均价', '当前价格', '最大杠杆']
-    symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
-
-    # 通过交易所接口获取合约账户信息
-    symbol_info = update_symbol_info()
-    print(symbol_info)
+    pass
+    # # =获取持仓数据
+    # # 初始化symbol_info，在每次循环开始时都初始化
+    # symbol_info_columns = ['账户权益', '持仓方向', '持仓量', '持仓收益率', '持仓收益', '持仓均价', '当前价格', '最大杠杆']
+    # symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
+    #
+    # # 通过交易所接口获取合约账户信息
+    # symbol_info = update_symbol_info()
+    # print(symbol_info)
