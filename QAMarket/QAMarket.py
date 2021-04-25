@@ -73,7 +73,7 @@ def fetch_okex_symbol_history_candle_data(symbol, time_interval, max_len):
     # cha = end - since
     # 循环获取历史数据
     all_kline_data = []
-    while len(all_kline_data) < 1000:
+    while len(all_kline_data) < max_len:
         # kline_data = QA_fetch_okex_kline_with_auto_retry(symbol, since, '15m')
         kline_data = fetch_ohlcv(symbol, since, '15m')
         if kline_data:
