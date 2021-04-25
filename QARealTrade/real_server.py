@@ -37,7 +37,7 @@ symbol_config = {
     'ETH-USDT': {'instrument_id': 'ETH-USDT-210430',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling',  # 使用的策略的名称
-                 'para': [20, 2]}  # 策略参数
+                 'para': [20, 1.5]}  # 策略参数
 }
 
 long_sleep_time = 10

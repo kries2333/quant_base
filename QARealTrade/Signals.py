@@ -89,6 +89,9 @@ def real_signal_simple_bolling(df, now_pos, avg_price, para=[200, 2]):
     elif (close > median) and (close2 <= median2):
         signal = 0
 
+    p = "close={} upper={} close2={} upper2={}".format(close, upper, close2, upper2)
+    print(p)
+    print("signal", signal)
     return signal
 
 
