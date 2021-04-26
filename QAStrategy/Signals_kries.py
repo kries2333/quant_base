@@ -240,6 +240,7 @@ def signal_mean_bolling_reverse_with_delay_para_list(m_list=range(20, 600+20, 20
 
     return para_list
 
+
 def signal_double_bolling(df, para=[20, 120]):
     """
     :param df:
@@ -295,8 +296,7 @@ def signal_double_bolling(df, para=[20, 120]):
     condition2 = df['close'].shift(1) >= median1.shift(1)
     condition3 = df['close'] < median2
     condition4 = df['close'].shift(1) >= median2.shift(1)
-    df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
-    df.loc[condition3 & condition4, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
     condition1 = df['close'] < lower1  # 当前K线的收盘价 < 下轨
@@ -310,8 +310,7 @@ def signal_double_bolling(df, para=[20, 120]):
     condition2 = df['close'].shift(1) <= median1.shift(1)  # 之前K线的收盘价 <= 中轨
     condition3 = df['close'] < median2
     condition4 = df['close'].shift(1) >= median2.shift(1)
-    df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
-    df.loc[condition3 & condition4, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 合并做多做空信号，去除重复信号
     df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
@@ -337,7 +336,7 @@ def signal_double_bolling_para_list(m_list=range(10, 100, 2), n_list=range(100, 
 
     return para_list
 
-def signal_double_bolling_mod1(df, para=[20, 120]):
+def signal_double_bolling_mod1(df, para=[200]):
     """
     :param df:
     :param para: n, m
@@ -353,74 +352,126 @@ def signal_double_bolling_mod1(df, para=[20, 120]):
     """
 
     # ===策略参数
-    n1 = int(para[0])
-    n2 = int(para[1])
+    rule_type = (df.iloc[1]['candle_begin_time'] - df.iloc[0]['candle_begin_time']).seconds / 60
+    interval = str(int(rule_type))
+    preset = {'15': 99, '30': 69, '60': 34, '120': 16, '240': 9}
+    pre = preset[interval]
 
-    median1 = df['close'].rolling(n1, min_periods=1).mean()
-    median2 = df['close'].rolling(n2, min_periods=1).mean()
+    # ==== 策略参数
+    n = int(para[0])
 
-    std1 = df['close'].rolling(n1, min_periods=1).std(ddof=0)
-    std2 = df['close'].rolling(n2, min_periods=1).std(ddof=0)
+    # ==== 计算指标
+    # 计算标准差
+    df['std'] = df['close'].rolling(n, ).std(ddof=0)  # ddof代表标准差自由度
 
-    z_score = abs((df['close'] - median1) / std1)
-    m1 = z_score.rolling(window=n1).max().shift(1)
+    # 计算均线
+    df['median'] = df['close'].rolling(n, ).mean()
 
-    z_score = abs((df['close'] - median2) / std2)
-    m2 = z_score.rolling(window=n2).max().shift(1)
+    # 计算 bias
+    df['bias'] = abs(df['close'] / df['median'] - 1)
+    df['bias_pct'] = df['bias'].rolling(n, ).max().shift()
 
-    upper1 = median1 + m1 * std1
-    lower1 = median1 - m1 * std1
+    # ==== 计算上轨、下轨道
+    # 构建自适应子母布林带
+    df['m_std'] = abs(df['close'] - df['median']) / df['std']
+    df['m_std'] = df['m_std'].rolling(window=pre, ).mean()  # 先对 df['m_std'] 求pre个窗口的平均值
+    df['m_std_max'] = df['m_std'].rolling(window=n, ).max()  # 再用n个窗口内df['m_std']的最大值当作母布林带的m
+    df['m_std_min'] = df['m_std'].rolling(window=n, ).min()  # 再用n个窗口内df['m_std']的最小值当作子布林带的m
 
-    df['upper'] = upper1
-    df['lower'] = lower1
-    df['median'] = median1
+    df['upper'] = df['median'] + df['m_std_max'] * df['std']
+    df['lower'] = df['median'] - df['m_std_max'] * df['std']
+    df['up'] = df['median'] + df['m_std_min'] * df['std']
+    df['dn'] = df['median'] - df['m_std_min'] * df['std']
 
-    upper2 = median2 + m2 * std2
-    lower2 = median2 - m2 * std2
+    # ==== 计算布林带宽度
+    df['scope'] = (df['upper'] - df['lower']) / df['median']
+    # 用布林带的宽度过滤
+    scope_condition = df['scope'] > df['scope'].rolling(n, ).max().shift(1)
 
-    condition1 = median1 > median2
-    condition2 = median1.shift(1) <= median2.shift(1)
+    # 做空自适应止盈
+    df['lower_std'] = df['lower'].rolling(n, ).std(ddof=0)
+    df['lower_mean'] = df['lower'].rolling(n, ).mean()
+    df['lower_std_m'] = abs(df['lower'] - df['lower_mean']) / df['lower_std']
+    df['lower_std_m_max'] = df['lower_std_m'].rolling(window=n, ).max()
+    df['lower_stop'] = df['lower'] - df['lower_std_m_max'] * df['lower_std']
+
+    # ==== 计算策略信号
+    # 找出做多信号
+    condition1 = df['close'] > df['upper']  # 当前K线的收盘价 > 母布林带上轨
+    condition2 = df['close'].shift(1) <= df['upper'].shift(1)  # 之前K线的收盘价 <= 母布林带上轨
     df.loc[condition1 & condition2, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
 
+    df.loc[scope_condition, 'signal_long'] = None
+
     # 找出做多平仓信号
-    condition1 = df['close'] > upper1
-    condition2 = df['close'] > upper2
-    condition3 = df['close'].shift(1) > upper1.shift(1)
-    condition4 = df['close'].shift(1) > upper2.shift(1)
-    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    condition1 = df['close'] < df['up']  # 当前K线的收盘价 < 子布林带上轨
+    condition2 = df['close'].shift(1) >= df['up'].shift(1)  # 之前K线的收盘价 >= 子布林带上轨
+    df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
-    condition1 = median1 < median2
-    condition2 = median1.shift(1) >= median2.shift(1)
+    condition1 = df['close'] < df['lower']  # 当前K线的收盘价 < 母布林带下轨
+    condition2 = df['close'].shift(1) >= df['lower'].shift(1)  # 之前K线的收盘价 >= 母布林带下轨
     df.loc[condition1 & condition2, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
 
+    df.loc[scope_condition, 'signal_short'] = None
+
     # 找出做空平仓信号
-    condition1 = df['close'] < upper1
-    condition2 = df['close'] < upper2
-    condition3 = df['close'].shift(1) < upper1.shift(1)
-    condition4 = df['close'].shift(1) < upper2.shift(1)
-    df.loc[condition1 & condition2 & condition3 & condition4, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    condition1 = df['close'] > df['dn']  # 当前K线的收盘价 > 子布林带下轨
+    condition2 = df['close'].shift(1) <= df['dn'].shift(1)  # 之前K线的收盘价 <= 子布林带下轨
+    df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
-    # 合并做多做空信号，去除重复信号
-    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
-    temp = df[df['signal'].notnull()][['signal']]
+    # ==== 使用bias
+    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)
+    df['signal'].fillna(method='ffill', inplace=True)
+
+    # ==== 根据bias，修改开仓时间
+    df['temp'] = df['signal']
+
+    # 将原始信号做多时，当bias大于阀值，设置为空
+    condition1 = (df['signal'] == 1)
+    condition2 = (df['bias'] > df['bias_pct'])
+    df.loc[condition1 & condition2, 'temp'] = None
+
+    # 将原始信号做空时，当bias大于阀值，设置为空
+    condition1 = (df['signal'] == -1)
+    condition2 = (df['bias'] > df['bias_pct'])
+    df.loc[condition1 & condition2, 'temp'] = None
+
+    # 原始信号刚开仓，并且大于阀值，将信号设置为0
+    condition1 = (df['signal'] != df['signal'].shift(1))
+    condition2 = (df['temp'].isnull())
+    df.loc[condition1 & condition2, 'temp'] = 0
+
+    # 使用之前的信号补全原始信号
+    df['temp'].fillna(method='ffill', inplace=True)
+    df['signal'] = df['temp']
+
+    # ===将signal中的重复值删除
+    temp = df[['signal']]
     temp = temp[temp['signal'] != temp['signal'].shift(1)]
-    df['signal'] = temp['signal']
+    df['signal'] = temp
 
-    # ===删除无关变量
-    df.drop(['signal_long', 'signal_short'], axis=1, inplace=True)
+
+    if interval in ['30', '60', '120', '240']:
+        # ==== 做空止盈
+        condition1 = df['close'] < df['lower_stop']
+        condition2 = df['signal'] != -1
+        condition3 = df['close'].shift(1) > df['lower_stop']
+        df.loc[condition1 & condition2 & condition3 , 'signal'] = 0
+
+        temp = df[df['signal'].notnull()][['signal']]
+        temp = temp[temp['signal'] != temp['signal'].shift(1)]
+        df['signal'] = temp['signal']
 
     return df
 
-def signal_double_bolling_mod1_para_list(m_list=range(10, 100, 5), n_list=range(100, 1000+20, 20)):
-    print('参数遍历范围：count', len(m_list) * len(n_list))
+def signal_double_bolling_mod1_para_list(m_list=range(10, 1000, 1)):
+    print('参数遍历范围：count', len(m_list))
     print('m_list', list(m_list))
-    print('n_list', list(n_list))
 
     para_list = []
     for m in m_list:
-        for n in n_list:
-            para = [m, n]
-            para_list.append(para)
+        para = [m]
+        para_list.append(para)
 
     return para_list

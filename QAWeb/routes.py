@@ -57,7 +57,7 @@ def routes(app):
         signal_name = 'signal_adapt_bolling'
         rule_type = '15m'
 
-        p = '../data/output/equity_curve/signal_double_bolling_ETH_15min_[42, 860].csv'
+        p = '../data/output/equity_curve/signal_double_bolling_mod1_ETH_15min_[904].csv'
         _all_data = pd.read_csv(p)
 
         trade = transfer_equity_curve_to_trade(_all_data)

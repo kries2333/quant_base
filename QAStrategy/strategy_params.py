@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 import Signals
 import Signals_kries
+import Signals_mod1
 
 # =====回测固定参数
 from Evaluate import equity_curve_for_OKEx_USDT_future_next_open
@@ -26,7 +27,7 @@ drop_days = 10  # 币种刚刚上线10天内不交易
 def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     _df = df.copy()
     # 计算交易信号
-    _df = getattr(Signals, signal_name)(_df, para=para)
+    _df = getattr(Signals_mod1, signal_name)(_df, para=para)
     # 计算实际持仓
     _df = position_for_OKEx_future(_df)
     # 币种上线10天之后的日期
@@ -49,9 +50,9 @@ def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     return rtn
 
 if __name__ == '__main__':
-    signal_name = 'signal_simple_bolling'
+    signal_name = 'signal_adapt_bolling_Reverse'
     for symbol in ['BTC', 'ETH']:
-        for rule_type in ['4H', '2H', '1H', '30T', '15T', '5T']:
+        for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
             print('开始遍历该策略参数：', signal_name, symbol, rule_type)
 
@@ -83,7 +84,7 @@ if __name__ == '__main__':
             df.reset_index(inplace=True, drop=True)
 
             # ===获取策略参数组合
-            para_list = getattr(Signals, signal_name + '_para_list')()
+            para_list = getattr(Signals_mod1, signal_name + '_para_list')()
 
             # ===并行回测
             start_time = datetime.now()  # 标记开始时间
