@@ -1,8 +1,9 @@
 import json
 import time
+import traceback
 
 import requests
-import datetime
+from _datetime import datetime
 import pandas as pd
 
 from urllib.parse import urljoin
@@ -24,7 +25,7 @@ def futures_post_order(params):
 
     body = json.dumps(params)
 
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     sign = get_sign((str(timestamp) + 'POST' + requestPath + body), secret)
 
     # 请求数据
@@ -68,24 +69,39 @@ def okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_a
     params = {
         "instId": symbol_config[symbol]["instrument_id"],  # 合约代码
         "tdMode": "cross", #交易模式 保证金模式：isolated：逐仓 ；cross：全仓 非保证金模式：cash：非保证金
-        # "ccy": "USDT",
+        "ccy": "USDT",
         "ordType": "limit"
     }
-    for order_type in symbol_signal[symbol]:
-        if order_type == 1:
-            params['side'] = 'buy'
-            params['posSide'] = 'long'
-        elif order_type == -1:
-            params['side'] = 'sell'
-            params['posSide'] = 'short'
-        elif order_type == 0:
-            params['side'] = 'sell'
-            params['posSide'] = 'long'
 
-        params['px'] = str(cal_order_price(symbol_info.at[symbol, "信号价格"], order_type))
-        params['sz'] = str(cal_order_size(symbol, symbol_info, symbol_config[symbol]['leverage']))
-        order_info = futures_post_order(params)
-        print(order_info)
+    order_id_list = []
+    for order_type in symbol_signal[symbol]:
+        try:
+            if order_type == 1:
+                params['side'] = 'buy'
+                params['posSide'] = 'long'
+            elif order_type == 2:
+                params['side'] = 'sell'
+                params['posSide'] = 'short'
+            elif order_type == 3:
+                params['side'] = 'sell'
+                params['posSide'] = 'long'
+            elif order_type == 4:
+                params['side'] = 'buy'
+                params['posSide'] = 'short'
+
+            params['px'] = str(cal_order_price(symbol_info.at[symbol, "信号价格"], order_type))
+            params['sz'] = str(int(cal_order_size(symbol, symbol_info, symbol_config[symbol]['leverage'])))
+            print('开始下单：', datetime.now())
+            order_info = futures_post_order(params)
+            for order in order_info:
+                order_id_list.append(order['ordId'])
+            print(order_info, '下单完成：', datetime.now())
+        except Exception as e:
+            print(e)
+            print("下单失败")
+            traceback.print_exc()
+
+    return order_id_list
 
 def single_threading_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount=5):
     # 函数输出变量
@@ -96,7 +112,7 @@ def single_threading_place_order(symbol_info, symbol_config, symbol_signal, max_
         # 遍历有交易信号的交易对
         for symbol in symbol_signal.keys():
             # 下单
-            _, order_id_list = okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount, symbol)
+            order_id_list = okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_amount, symbol)
 
             # 记录
             for order_id in order_id_list:

@@ -59,16 +59,7 @@ def fetch_ohlcv(symbol, since=None, timeframe='1m', limit=100):
 # 获取历史数据
 def fetch_okex_symbol_history_candle_data(symbol, time_interval, max_len):
     # 获取当前时间
-    now_milliseconds = int(time.time() * 1e3)
-
-    # # 每根K线的间隔时间
-    # time_interval_int = int(time_interval[:-1])  # 若15m，则time_interval_int = 15；若2h，则time_interval_int = 2
-    # if time_interval.endswith('m'):
-    #     time_segment = time_interval_int * 60 * 1000  # 15分钟 * 每分钟60s
-    # elif time_interval.endswith('h'):
-    #     time_segment = time_interval_int * 60 * 60 * 1000  # 2小时 * 每小时60分钟 * 每分钟60s
-
-    since = now_milliseconds
+    since = int(time.time() * 1e3)
 
     # 循环获取历史数据
     all_kline_data = []

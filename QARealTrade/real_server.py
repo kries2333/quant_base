@@ -1,4 +1,5 @@
 import time
+import traceback
 
 from QAAccount.QAOkex_rapi_account import update_symbol_info
 from QAOrder.QAOrder_okex import okex_future_place_order, single_threading_place_order
@@ -34,18 +35,19 @@ OKEX_CONFIG = {
 # =====配置交易相关参数=====
 # 更新需要交易的合约、策略参数、下单量等配置信息
 symbol_config = {
-    'ETH-USDT': {'instrument_id': 'ETH-USDT-210430',  # 合约代码，当更换合约的时候需要手工修改
+    'ETH-USDT': {'instrument_id': 'ETH-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling',  # 使用的策略的名称
-                 'para': [20, 1.5]}  # 策略参数
+                 'para': [520, 2.5]}  # 策略参数
 }
 
+symbol = 'ETH-USDT'
+time_interval = '15m'
+max_len = 50
 long_sleep_time = 10
 
 def start():
-    symbol = 'ETH-USDT'
-    time_interval = '1m'
-    max_len = 100
+
     symbol_candle_data = dict()  # 用于存储K线数据
 
     # 获取的历史数据
@@ -67,9 +69,8 @@ def start():
         # =并行获取所有币种最近数据
         candle_num = 10
         recent_candle_data = single_threading_get_data(symbol_info, symbol_config, time_interval, run_time, candle_num)
-        for symbol in symbol_config.keys():
-            print(recent_candle_data[symbol].tail(2))
-
+        # for symbol in symbol_config.keys():
+        #     print(recent_candle_data[symbol].tail(2))
         # 把历史数据与最新数据合并
         df = symbol_candle_data[symbol].append(recent_candle_data[symbol], ignore_index=True)
         df.drop_duplicates(subset=['candle_begin_time_GMT8'], keep='last', inplace=True)
@@ -111,4 +112,5 @@ if __name__ == '__main__':
             start()
         except Exception as e:
             print(e)
+            traceback.print_exc()
             time.sleep(long_sleep_time)

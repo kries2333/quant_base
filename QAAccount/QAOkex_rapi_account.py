@@ -141,7 +141,7 @@ def update_symbol_info(symbol_info, symbol_config):
             symbol_info['多头均价'] = position['avgPx']
             symbol_info['多头收益率'] = position['uplRatio']
             symbol_info['多头收益'] = position['upl']
-        elif future_position['posSide'] == "short":
+        elif position['posSide'] == "short":
             symbol_info['空头持仓量'] = position['pos']
             symbol_info['空头均价'] = position['avgPx']
             symbol_info['空头收益率'] = position['uplRatio']

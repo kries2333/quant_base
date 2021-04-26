@@ -48,7 +48,7 @@ def calculate_signal(symbol_info, symbol_config, symbol_candle_data):
             symbol_signal[symbol] = [4, 1]
 
         symbol_info.at[symbol, '信号时间'] = datetime.now()  # 计算产生信号的时间
-    symbol_signal[symbol] = [1]
+
     return symbol_signal
 
 
