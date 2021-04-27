@@ -113,24 +113,24 @@ def get_candle_data(symbol_config, time_interval, run_time, max_try_amount, cand
         if df.empty:
             continue  # 再次获取
 
-        # 判断是否包含最新一根的K线数据。例如当time_interval为15分钟，run_time为14:15时，即判断当前获取到的数据中是否包含14:15这根K线
-        # 【其实这段代码可以省略】
-        if time_interval.endswith('m'):
-            _ = df[df['candle_begin_time_GMT8'] == (run_time - timedelta(minutes=int(time_interval[:-1])))]
-        elif time_interval.endswith('h'):
-            _ = df[df['candle_begin_time_GMT8'] == (run_time - timedelta(hours=int(time_interval[:-1])))]
-        else:
-            print('time_interval不以m或者h结尾，出错，程序exit')
-            exit()
-        if _.empty:
-            print('获取数据不包含最新的数据，重新获取')
-            time.sleep(2)
-            continue  # 再次获取
+        # # 判断是否包含最新一根的K线数据。例如当time_interval为15分钟，run_time为14:15时，即判断当前获取到的数据中是否包含14:15这根K线
+        # # 【其实这段代码可以省略】
+        # if time_interval.endswith('m'):
+        #     d = df[df['candle_begin_time_GMT8'] == (run_time - timedelta(minutes=int(time_interval[:-1])))]
+        # elif time_interval.endswith('h'):
+        #     d = df[df['candle_begin_time_GMT8'] == (run_time - timedelta(hours=int(time_interval[:-1])))]
+        # else:
+        #     print('time_interval不以m或者h结尾，出错，程序exit')
+        #     exit()
+        # if d.empty:
+        #     print('获取数据不包含最新的数据，重新获取')
+        #     time.sleep(2)
+        #     continue  # 再次获取
 
         else:  # 获取到了最新数据
             signal_price = df.iloc[-1]['close']  # 该品种的最新价格
             df = df[df['candle_begin_time_GMT8'] < pd.to_datetime(run_time)]  # 去除run_time周期的数据
-            print('结束获取K线数据', symbol, '结束时间：', datetime.now())
+            print('最新信号价格', signal_price, '结束获取K线数据', symbol, '结束时间：', datetime.now())
             return symbol, df, signal_price
 
     print('获取candle_data数据次数超过max_try_amount，数据返回空值')

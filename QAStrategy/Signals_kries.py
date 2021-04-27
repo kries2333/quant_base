@@ -108,7 +108,7 @@ def signal_adapt_bolling_bias(df, para=[200, 0.3]):
     temp = temp[temp['signal'] != temp['signal'].shift(1)]
     df['signal'] = temp
 
-    df.drop(['raw_signal', 'median', 'std', 'upper', 'lower', 'bias', 'temp', 'signal_long', 'signal_short'], axis=1,
+    df.drop(['raw_signal', 'temp', 'signal_long', 'signal_short'], axis=1,
             inplace=True)
 
     return df

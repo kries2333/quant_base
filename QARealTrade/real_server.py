@@ -47,7 +47,7 @@ symbol_config = {
                  }  # 策略参数
 }
 
-time_interval = '15m'
+time_interval = '1m'
 max_len = 500
 long_sleep_time = 10
 

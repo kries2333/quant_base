@@ -8,8 +8,8 @@ from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evaluate
 
 symbol = 'ETH-USDT_5m'
-para = [904]
-signal_name = 'signal_double_bolling_mod1'
+para = [380, 0.09]
+signal_name = 'signal_adapt_bolling_bias'
 rule_type = '15min'
 
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}

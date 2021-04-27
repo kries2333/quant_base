@@ -116,24 +116,25 @@ def real_signal_simple_bolling_bias(df, now_pos, avg_price, para=[200, 0.3]):
 
     # ===计算指标
     # 计算均线
-    df['median'] = df['close'].rolling(n).mean()  # 此处只计算最后几行的均线值，因为没有加min_period参数
+    df['median'] = df['close'].rolling(n, min_periods=1).mean()  # 此处只计算最后几行的均线值，因为没有加min_period参数
     median = df.iloc[-1]['median']
     median2 = df.iloc[-2]['median']
+
     # 计算标准差
-    df['std'] = df['close'].rolling(n).std(ddof=0)  # ddof代表标准差自由度，只计算最后几行的均线值，因为没有加min_period参数
+    df['std'] = df['close'].rolling(n, min_periods=1).std(ddof=0)  # ddof代表标准差自由度，只计算最后几行的均线值，因为没有加min_period参数
     std = df.iloc[-1]['std']
     std2 = df.iloc[-2]['std']
 
     z_score = abs((df['close'] - df['median']) / df['std'])
     m = z_score.rolling(window=n).max().shift(1).iloc[-1]
 
-    print("平均线 n = ", n)
-    print("标准差的倍数 m = ", m)
-
     # ===寻找交易信号
     signal = None
     close = df.iloc[-1]['close']
     close2 = df.iloc[-2]['close']
+
+    print("平均线 n = ", n)
+    print("标准差的倍数 m = ", m)
 
     # 计算上轨、下轨道
     upper = median + m * std
@@ -157,4 +158,7 @@ def real_signal_simple_bolling_bias(df, now_pos, avg_price, para=[200, 0.3]):
     elif (close > median) and (close2 <= median2):
         signal = 0
 
+    p = "close={} upper={} close2={} upper2={} bias={}".format(close, upper, close2, upper2, bias)
+    print(p)
+    print("signal", signal)
     return signal
