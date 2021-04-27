@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 
 # 策略名称
-strategy_name = 'signal_adapt_bolling_Reverse'  # signal_simple_bolling
+strategy_name = 'signal_adapt_bolling_bias'  # signal_simple_bolling
 # 每个币种、时间周期的策略数量
 strategy_num = 3
 

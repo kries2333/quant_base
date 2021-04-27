@@ -105,12 +105,16 @@ def fetch_future_account():
     return df
 
 def fetch_future_position():
-    data = okex_fetch_future_position()
 
-    df = pd.DataFrame(data, dtype=float)
-
+    position_info = okex_fetch_future_position()
+    # 整理数据
+    df = pd.DataFrame(position_info, dtype=float)
+    # 防止账户初始化时出错
+    if "instId" in df.columns:
+        df['index'] = df['instId'].str[:-5].str.lower()
+        df.set_index(keys='index', inplace=True)
+        df.index.name = None
     return df
-
 
 def update_symbol_info(symbol_info, symbol_config):
     # 通过交易所接口获取合约账户信息
@@ -123,53 +127,25 @@ def update_symbol_info(symbol_info, symbol_config):
         symbol_info['账户权益'] = future_account[0]['availEq']
 
     if future_position.empty is False:
-        position = future_position.loc[0]
-        # 从future_position中获取原始数据
-        symbol_info['最大杠杆'] = position['lever']
-        symbol_info['当前价格'] = position['last']
-        symbol_info['多头持仓量'] = 0
-        symbol_info['多头均价'] = 0
-        symbol_info['多头收益率'] = 0
-        symbol_info['多头收益'] = 0
-        symbol_info['空头持仓量'] = 0
-        symbol_info['空头均价'] = 0
-        symbol_info['空头收益率'] = 0
-        symbol_info['空头收益'] = 0
+        for x in future_position.index:
+            position = future_position.loc[x]
+            instrument_id = x.upper()
+            # 从future_position中获取原始数据
+            symbol_info.loc[instrument_id, '最大杠杆'] = position['lever']
+            symbol_info.loc[instrument_id, '当前价格'] = position['last']
 
-        if position['posSide'] == "long":
-            symbol_info['多头持仓量'] = position['pos']
-            symbol_info['多头均价'] = position['avgPx']
-            symbol_info['多头收益率'] = position['uplRatio']
-            symbol_info['多头收益'] = position['upl']
-        elif position['posSide'] == "short":
-            symbol_info['空头持仓量'] = position['pos']
-            symbol_info['空头均价'] = position['avgPx']
-            symbol_info['空头收益率'] = position['uplRatio']
-            symbol_info['空头收益'] = position['upl']
-
-        # 整理原始数据，计算需要的数据
-        # 多头、空头的index
-        long_index = symbol_info[symbol_info['多头持仓量'] > 0].index
-        short_index = symbol_info[symbol_info['空头持仓量'] > 0].index
-        # 账户持仓方向
-        symbol_info.loc[long_index, '持仓方向'] = 1
-        symbol_info.loc[short_index, '持仓方向'] = -1
-        symbol_info['持仓方向'].fillna(value=0, inplace=True)
-        # 账户持仓量
-        symbol_info.loc[long_index, '持仓量'] = symbol_info['多头持仓量']
-        symbol_info.loc[short_index, '持仓量'] = symbol_info['空头持仓量']
-        # 持仓均价
-        symbol_info.loc[long_index, '持仓均价'] = symbol_info['多头均价']
-        symbol_info.loc[short_index, '持仓均价'] = symbol_info['空头均价']
-        # 持仓收益率
-        symbol_info.loc[long_index, '持仓收益率'] = symbol_info['多头收益率']
-        symbol_info.loc[short_index, '持仓收益率'] = symbol_info['空头收益率']
-        # 持仓收益
-        symbol_info.loc[long_index, '持仓收益'] = symbol_info['多头收益']
-        symbol_info.loc[short_index, '持仓收益'] = symbol_info['空头收益']
-        # 删除不必要的列
-        symbol_info.drop(['多头持仓量', '多头均价', '空头持仓量', '空头均价', '多头收益率', '空头收益率', '多头收益', '空头收益'],
-                         axis=1, inplace=True)
+            if position['posSide'] == "long":
+                symbol_info.loc[instrument_id, '持仓方向'] = '多单'
+                symbol_info.loc[instrument_id, '持仓量'] = position['pos']
+                symbol_info.loc[instrument_id, '持仓均价'] = position['avgPx']
+                symbol_info.loc[instrument_id, '持仓收益率'] = position['uplRatio']
+                symbol_info.loc[instrument_id, '持仓收益'] = position['upl']
+            elif position['posSide'] == "short":
+                symbol_info.loc[instrument_id, '持仓方向'] = '空单'
+                symbol_info.loc[instrument_id, '持仓量'] = position['pos']
+                symbol_info.loc[instrument_id, '持仓均价'] = position['avgPx']
+                symbol_info.loc[instrument_id, '持仓收益率'] = position['uplRatio']
+                symbol_info.loc[instrument_id, '持仓收益'] = position['upl']
 
     else:
         # 当future_position为空时，将持仓方向的控制填充为0，防止之后判定信号时出错
