@@ -1,12 +1,12 @@
 import numpy as np
 
 # 布林+bias策略自适应参数1
-def signal_adapt_bolling_ZG(df, para=[200, 20]):
+def signal_double_bolling_mod1(df, para=[200, 20]):
     """
     :param df:
     :param para: n, m
     :return:
-
+    # 双均线,基础模型
     # 布林线策略
     # 布林线中轨：n天收盘价的移动平均线
     # 布林线上轨：n天收盘价的移动平均线 + m * n天收盘价的标准差
@@ -16,36 +16,44 @@ def signal_adapt_bolling_ZG(df, para=[200, 20]):
     """
 
     # ===策略参数
-    n = int(para[0])
-    m = para[1]
+    n1 = int(para[0])
+    n2 = int(para[1])
 
-    # ===计算指标
-    # 计算均线
-    df['median'] = df['close'].rolling(n, min_periods=1).mean()
-    # 计算上轨、下轨道
-    df['std'] = df['close'].rolling(n, min_periods=1).std(ddof=0)  # ddof代表标准差自由度
-    df['upper'] = df['median'] + m * df['std']
-    df['lower'] = df['median'] - m * df['std']
+    median1 = df['close'].rolling(n1, min_periods=1).mean()
+    median2 = df['close'].rolling(n2, min_periods=1).mean()
 
-    # ===计算信号
-    # 找出做多信号
-    condition1 = df['close'] > df['median']  # 当前K线的收盘价 > 上轨
-    condition2 = df['close'].shift(1) <= df['median'].shift(1)  # 之前K线的收盘价 <= 上轨
+    std1 = df['close'].rolling(n1, min_periods=1).std(ddof=0)
+    std2 = df['close'].rolling(n2, min_periods=1).std(ddof=0)
+
+    z_score = abs((df['close'] - median1) / std1)
+    m1 = z_score.rolling(window=n1).max().shift(1)
+
+    z_score = abs((df['close'] - median2) / std2)
+    m2 = z_score.rolling(window=n2).max().shift(1)
+
+    upper1 = median1 + m1 * std1
+    lower1 = median1 - m1 * std1
+
+    upper2 = median2 + m2 * std2
+    lower2 = median2 - m2 * std2
+
+    condition1 = lower2 < median1
+    condition2 = lower2.shift(1) >= median1.shift(1)
     df.loc[condition1 & condition2, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
 
     # 找出做多平仓信号
-    condition1 = df['close'] < df['upper']  # 当前K线的收盘价 < 中轨
-    condition2 = df['close'].shift(1) >= df['upper'].shift(1)  # 之前K线的收盘价 >= 中轨
+    condition1 = upper2 > median1
+    condition2 = upper2.shift(1) <= median1.shift(1)
     df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
-    condition1 = df['close'] < df['median']  # 当前K线的收盘价 < 下轨
-    condition2 = df['close'].shift(1) >= df['median'].shift(1)  # 之前K线的收盘价 >= 下轨
+    condition1 = upper2 > median1
+    condition2 = upper2.shift(1) <= median1.shift(1)
     df.loc[condition1 & condition2, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
 
     # 找出做空平仓信号
-    condition1 = df['close'] > df['lower']  # 当前K线的收盘价 > 中轨
-    condition2 = df['close'].shift(1) <= df['lower'].shift(1)  # 之前K线的收盘价 <= 中轨
+    condition1 = lower2 < median1
+    condition2 = lower2.shift(1) >= median1.shift(1)
     df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 合并做多做空信号，去除重复信号
@@ -55,12 +63,16 @@ def signal_adapt_bolling_ZG(df, para=[200, 20]):
     temp = temp[temp['signal'] != temp['signal'].shift(1)]
     df['signal'] = temp['signal']
 
+    df['upper'] = upper1
+    df['lower'] = lower1
+    df['median'] = median1
+
     # ===删除无关变量
-    df.drop(['median', 'std', 'upper', 'lower', 'signal_long', 'signal_short'], axis=1, inplace=True)
+    df.drop(['signal_long', 'signal_short'], axis=1, inplace=True)
 
     return df
 
-def signal_adapt_bolling_ZG_para_list(m_list=range(20, 1000, 10), n_list=[i / 10 for i in list(np.arange(5, 50, 1))]):
+def signal_double_bolling_mod1_para_list(m_list=range(200, 500, 20), n_list=range(10, 200, 2)):
     """
         :param m_list:
         :param n_list:

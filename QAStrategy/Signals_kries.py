@@ -262,8 +262,6 @@ def signal_double_bolling(df, para=[20, 120]):
     median1 = df['close'].rolling(n1, min_periods=1).mean()
     median2 = df['close'].rolling(n2, min_periods=1).mean()
 
-    volume = df['volume'].rolling(n1, min_periods=1).mean()
-
     std1 = df['close'].rolling(n1, min_periods=1).std(ddof=0)
     std2 = df['close'].rolling(n2, min_periods=1).std(ddof=0)
 
