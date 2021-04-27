@@ -38,17 +38,17 @@ symbol_config = {
     'ETH-USDT': {'instrument_id': 'ETH-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
-                 'para': [380, 0.09]
+                 'para': [460, 0.09]
                  },  # 策略参数
     'BTC-USDT': {'instrument_id': 'BTC-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
                  'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
-                 'para': [300, 0.05]
+                 'para': [680, 0.09]
                  }  # 策略参数
 }
 
 time_interval = '1m'
-max_len = 500
+max_len = 800
 long_sleep_time = 10
 
 def start():

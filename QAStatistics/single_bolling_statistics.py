@@ -8,7 +8,7 @@ from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evaluate
 
 symbol = 'ETH-USDT_5m'
-para = [380, 0.09]
+para = [460, 0.09]
 signal_name = 'signal_adapt_bolling_bias'
 rule_type = '15min'
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     period_df.reset_index(inplace=True)
     df = period_df[['candle_begin_time', 'open', 'high', 'low', 'close', 'volume', 'quote_volume', 'trade_num',
                     'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']]
-    df = df[df['candle_begin_time'] >= pd.to_datetime('2017-01-01')]
+    df = df[df['candle_begin_time'] >= pd.to_datetime('2018-01-01')]
     df.reset_index(inplace=True, drop=True)
 
     # =====计算交易信号

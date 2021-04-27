@@ -50,7 +50,7 @@ def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     return rtn
 
 if __name__ == '__main__':
-    signal_name = 'signal_adapt_bolling_bias'
+    signal_name = 'signal_double_bolling'
     for symbol in ['BTC', 'ETH']:
         for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
             period_df.reset_index(inplace=True)
             df = period_df[['candle_begin_time', 'open', 'high', 'low', 'close', 'volume', 'quote_volume', 'trade_num',
                             'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']]
-            df = df[df['candle_begin_time'] >= pd.to_datetime('2017-01-01')]
+            df = df[df['candle_begin_time'] >= pd.to_datetime('2018-01-01')]
             df.reset_index(inplace=True, drop=True)
 
             # ===获取策略参数组合
