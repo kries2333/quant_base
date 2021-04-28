@@ -3,14 +3,13 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 from datetime import datetime
 import pandas as pd
-import Signals
-import Signals_kries
-import Signals_mod1
 
 # =====回测固定参数
-from Evaluate import equity_curve_for_OKEx_USDT_future_next_open
-from Position import position_for_OKEx_future
-from Statistics import return_drawdown_ratio
+from QAStrategy.Evaluate import equity_curve_for_OKEx_USDT_future_next_open
+from QAStrategy.Position import position_for_OKEx_future
+from QAStrategy.Statistics import return_drawdown_ratio
+import QAStrategy.Signals
+import QAStrategy.Signals_mod1
 
 tag = '20210417'  # 本次回测标记
 description = '回测数据基于币安usdt现货的分钟数据'
@@ -22,12 +21,18 @@ min_margin_ratio = 1 / 100  # 最低保证金率，低于就会爆仓
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
 drop_days = 10  # 币种刚刚上线10天内不交易
 
+temp = "QAStrategy.Signals"
+
+lookup = {'Signals': QAStrategy.Signals}
+
 # =====批量遍历策略参数
 # ===单次循环
 def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
+
+
     _df = df.copy()
     # 计算交易信号
-    _df = getattr(Signals_mod1, signal_name)(_df, para=para)
+    _df = getattr(lookup.get('Signals'), signal_name)(_df, para=para)
     # 计算实际持仓
     _df = position_for_OKEx_future(_df)
     # 币种上线10天之后的日期
@@ -49,8 +54,7 @@ def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     print(signal_name, symbol, rule_type, para, '策略收益：', r)
     return rtn
 
-if __name__ == '__main__':
-    signal_name = 'signal_double_bolling_mod1'
+def straegy_start(signal_name):
     for symbol in ['BTC', 'ETH']:
         for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
@@ -84,7 +88,7 @@ if __name__ == '__main__':
             df.reset_index(inplace=True, drop=True)
 
             # ===获取策略参数组合
-            para_list = getattr(Signals_mod1, signal_name + '_para_list')()
+            para_list = getattr(lookup.get('Signals'), signal_name + '_para_list')()
 
             # ===并行回测
             start_time = datetime.now()  # 标记开始时间
@@ -105,6 +109,12 @@ if __name__ == '__main__':
 
             # ===存储参数数据
             p = '../data/output/para/%s-%s-%s-%s-%s.csv' % (
-            signal_name, symbol, leverage_rate, rule_type, tag)
+                signal_name, symbol, leverage_rate, rule_type, tag)
             pd.DataFrame(columns=[description]).to_csv(p, index=False)
             para_curve_df.to_csv(p, index=False, mode='a')
+
+    return True
+
+if __name__ == '__main__':
+    signal_name = 'signal_double_bolling_mod1'
+    straegy_start(signal_name)

@@ -42,8 +42,8 @@ def signal_double_bolling_mod1(df, para=[200, 20]):
     df.loc[condition1 & condition2, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
 
     # 找出做多平仓信号
-    condition1 = upper2 > median1
-    condition2 = upper2.shift(1) <= median1.shift(1)
+    condition1 = df['close'] < median1  # 当前K线的收盘价 < 中轨
+    condition2 = df['close'].shift(1) >= median1.shift(1)  # 之前K线的收盘价 >= 中轨
     df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
@@ -52,13 +52,12 @@ def signal_double_bolling_mod1(df, para=[200, 20]):
     df.loc[condition1 & condition2, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
 
     # 找出做空平仓信号
-    condition1 = lower2 < median1
-    condition2 = lower2.shift(1) >= median1.shift(1)
+    condition1 = df['close'] > median1  # 当前K线的收盘价 > 中轨
+    condition2 = df['close'].shift(1) <= median1.shift(1)  # 之前K线的收盘价 <= 中轨
     df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 合并做多做空信号，去除重复信号
-    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1,
-                                                           skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
+    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
     temp = df[df['signal'].notnull()][['signal']]
     temp = temp[temp['signal'] != temp['signal'].shift(1)]
     df['signal'] = temp['signal']

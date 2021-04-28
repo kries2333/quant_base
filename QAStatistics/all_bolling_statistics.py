@@ -2,11 +2,10 @@ import glob
 import pandas as pd
 
 # 策略名称
-strategy_name = 'signal_double_bolling_mod1'  # signal_simple_bolling
 # 每个币种、时间周期的策略数量
 strategy_num = 3
 
-if __name__ == "__main__":
+def all_statistics(strategy_name):
     # 遍历所有策略结果
     rtn = pd.DataFrame()
     path_list = glob.glob('../data/output/para/*.csv')  # python自带的库，或者某文件夹中所有csv文件的路径
@@ -38,3 +37,8 @@ if __name__ == "__main__":
     summary = rtn.groupby(['strategy_name', 'symbol'])[['年化收益回撤比']].mean().reset_index()
     print(summary)
     summary.to_csv('../data/output/策略总体评价.csv', index=False)
+
+if __name__ == "__main__":
+
+    strategy_name = ""
+    all_statistics(strategy_name)
