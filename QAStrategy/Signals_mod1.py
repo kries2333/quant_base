@@ -202,11 +202,19 @@ def signal_atrboll_bolling_para_list(m_list=range(20, 1000+20, 20), d_list=[i / 
     return para_list
 
 def signal_double_bolling_rsi(df, para=[200]):
-    rsi = talib.RSI(df['close'])
-    condition1 = [rsi < 30]
 
-    condition1 = [rsi > 70]
-    print(rsi)
+    n = int(para[0])
+
+    rsi1 = talib.RSI(df['close'], 6)
+    rsi2 = talib.RSI(df['close'], 12)
+
+    df['rsi1'] = rsi1
+    df['rsi2'] = rsi2
+    condition1 = [df['rsi1'] < 20]
+    condition2 = df['rsi1'] > df['rsi2']
+    condition3 = df['rsi1'].shift(1) <= df['rsi2'].shift(1)
+    # condition3 = rsi1.shile
+    # print(rsi1)
 
 def signal_double_bolling_rsi_para_list(m_list=range(20, 1000+20, 20)):
     """
