@@ -21,18 +21,16 @@ min_margin_ratio = 1 / 100  # 最低保证金率，低于就会爆仓
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
 drop_days = 10  # 币种刚刚上线10天内不交易
 
-temp = "QAStrategy.Signals"
-
-lookup = {'Signals': QAStrategy.Signals}
+lookup = {'Signals': QAStrategy.Signals, "mod1": QAStrategy.Signals_mod1}
 
 # =====批量遍历策略参数
 # ===单次循环
-def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
+def calculate_by_one_loop(para, model_name, df, signal_name, symbol, rule_type):
 
 
     _df = df.copy()
     # 计算交易信号
-    _df = getattr(lookup.get('Signals'), signal_name)(_df, para=para)
+    _df = getattr(lookup.get(model_name), signal_name)(_df, para=para)
     # 计算实际持仓
     _df = position_for_OKEx_future(_df)
     # 币种上线10天之后的日期
@@ -54,7 +52,7 @@ def calculate_by_one_loop(para, df, signal_name, symbol, rule_type):
     print(signal_name, symbol, rule_type, para, '策略收益：', r)
     return rtn
 
-def straegy_start(signal_name):
+def straegy_start(model_name, signal_name):
     for symbol in ['BTC', 'ETH']:
         for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
@@ -88,13 +86,13 @@ def straegy_start(signal_name):
             df.reset_index(inplace=True, drop=True)
 
             # ===获取策略参数组合
-            para_list = getattr(lookup.get('Signals'), signal_name + '_para_list')()
+            para_list = getattr(lookup.get(model_name), signal_name + '_para_list')()
 
             # ===并行回测
             start_time = datetime.now()  # 标记开始时间
 
             # 利用partial指定参数值
-            part = partial(calculate_by_one_loop, df=df, signal_name=signal_name, symbol=symbol, rule_type=rule_type)
+            part = partial(calculate_by_one_loop, model_name=model_name, df=df, signal_name=signal_name, symbol=symbol, rule_type=rule_type)
 
             with Pool(max(cpu_count() - 1, 1)) as pool:
                 # 使用并行批量获得data frame的一个列表
@@ -116,5 +114,6 @@ def straegy_start(signal_name):
     return True
 
 if __name__ == '__main__':
-    signal_name = 'signal_double_bolling_mod1'
-    straegy_start(signal_name)
+    signal_name = 'signal_double_bolling_rsi'
+    temp = "mod1"
+    straegy_start(temp, signal_name)
