@@ -1,5 +1,5 @@
 import numpy as np
-
+import pandas as pd
 # 布林+bias策略自适应参数1
 import talib
 
@@ -201,22 +201,56 @@ def signal_atrboll_bolling_para_list(m_list=range(20, 1000+20, 20), d_list=[i / 
             para_list.append(para)
     return para_list
 
-def signal_double_bolling_rsi(df, para=[200]):
+def signal_double_bolling_rsi(df, para=[20, 200]):
 
+    """
+    :param df:
+    :param para: n, m
+    :return:
+
+    # 布林线策略
+    # 布林线中轨：n天收盘价的移动平均线
+    # 布林线上轨：n天收盘价的移动平均线 + m * n天收盘价的标准差
+    # 布林线上轨：n天收盘价的移动平均线 - m * n天收盘价的标准差
+    # 当收盘价由下向上穿过上轨的时候，做多；然后由上向下穿过中轨的时候，平仓。
+    # 当收盘价由上向下穿过下轨的时候，做空；然后由下向上穿过中轨的时候，平仓。
+    """
+
+    # ===策略参数
     n = int(para[0])
+    m = int(para[1])
 
-    rsi1 = talib.RSI(df['close'], 6)
-    rsi2 = talib.RSI(df['close'], 12)
+    rsi1 = np.array(talib.RSI(df['close'], n))
+    rsi2 = np.array(talib.RSI(df['close'], m))
 
-    df['rsi1'] = rsi1
-    df['rsi2'] = rsi2
-    condition1 = [df['rsi1'] < 20]
-    condition2 = df['rsi1'] > df['rsi2']
-    condition3 = df['rsi1'].shift(1) <= df['rsi2'].shift(1)
-    # condition3 = rsi1.shile
-    # print(rsi1)
+    rsi1 = pd.Series(rsi1)
+    rsi2 = pd.Series(rsi2)
 
-def signal_double_bolling_rsi_para_list(m_list=range(20, 1000+20, 20)):
+    condition1 = rsi1 > rsi2
+    condition2 = rsi1.shift(1) <= rsi2.shift(1)
+    df['signal_long'] = 0
+    df.loc[condition1 & condition2, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
+
+
+    # 找出做空信号
+    condition1 = rsi1 < rsi2
+    condition2 = rsi1.shift(1) >= rsi2.shift(1)
+    df['signal_short'] = 0
+    df.loc[condition1 & condition2, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
+
+    # 合并做多做空信号，去除重复信号
+    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
+    temp = df[df['signal'].notnull()][['signal']]
+    temp = temp[temp['signal'] != temp['signal'].shift(1)]
+    df['signal'] = temp['signal']
+
+    # ===删除无关变量
+    # df.drop(['std', 'signal_long', 'signal_short'], axis=1, inplace=True)
+
+    return df
+
+
+def signal_double_bolling_rsi_para_list(n_list=range(1, 10, 1), m_list=range(20, 40, 1)):
     """
         :param m_list:
         :param n_list:
@@ -232,8 +266,9 @@ def signal_double_bolling_rsi_para_list(m_list=range(20, 1000+20, 20)):
      """
     para_list = []
 
-    for m in m_list:
-        para = [m]
-        para_list.append(para)
+    for n in n_list:
+        for m in m_list:
+            para = [n, m]
+            para_list.append(para)
 
     return para_list
