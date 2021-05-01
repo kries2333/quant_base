@@ -6,11 +6,12 @@ from QAStrategy import Signals_kries
 from QAStrategy.Evaluate import equity_curve_for_OKEx_USDT_future_next_open
 from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evaluate
+import QAStrategy.Signals_mod1
 
 symbol = 'ETH-USDT_5m'
-para = [440, 128]
-signal_name = 'signal_double_bolling_mod1'
-rule_type = '15min'
+para = [140, 21]
+signal_name = 'signal_double_bolling_rsi'
+rule_type = '4H'
 
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
 c_rate = 5 / 10000  # 手续费，commission fees，默认为万分之5。不同市场手续费的收取方法不同，对结果有影响。比如和股票就不一样。
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     df.reset_index(inplace=True, drop=True)
 
     # =====计算交易信号
-    df = getattr(Signals_kries, signal_name)(df, para=para)
+    df = getattr(QAStrategy.Signals_mod1, signal_name)(df, para=para)
 
     # =====计算实际持仓
     df = position_for_OKEx_future(df)

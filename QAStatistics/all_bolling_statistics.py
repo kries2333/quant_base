@@ -39,5 +39,5 @@ def all_statistics(strategy_name):
     summary.to_csv('../data/output/策略总体评价.csv', index=False)
 
 if __name__ == "__main__":
-    strategy_name = "signal_atrboll_bolling"
+    strategy_name = "signal_double_bolling_rsi"
     all_statistics(strategy_name)

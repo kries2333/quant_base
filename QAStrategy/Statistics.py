@@ -157,7 +157,10 @@ def return_drawdown_ratio(equity_curve):
     end_date, max_draw_down = tuple(equity_curve.sort_values(by=['dd2here']).iloc[0][['candle_begin_time', 'dd2here']])
 
     # ===年化收益/回撤比
-    sharpe = annual_return / abs(max_draw_down)
+    if max_draw_down != 0:
+        sharpe = annual_return / abs(max_draw_down)
+    else:
+        sharpe = 0
 
     return annual_return, max_draw_down, sharpe
 
