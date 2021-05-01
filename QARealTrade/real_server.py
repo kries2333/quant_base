@@ -35,20 +35,21 @@ OKEX_CONFIG = {
 # =====配置交易相关参数=====
 # 更新需要交易的合约、策略参数、下单量等配置信息
 symbol_config = {
-    'ETH-USDT': {'instrument_id': 'ETH-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
-                 'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
-                 'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
-                 'para': [460, 0.09]
-                 },  # 策略参数
     'BTC-USDT': {'instrument_id': 'BTC-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
                  'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
-                 'strategy_name': 'real_signal_simple_bolling_bias',  # 使用的策略的名称
-                 'para': [680, 0.09]
-                 }  # 策略参数
+                 'strategy_name': 'real_signal_simple_bolling_bias1',  # 使用的策略的名称
+                 'para': [500, 2.0, 0.08]
+                 },  # 策略参数
+
+    'ETH-USDT': {'instrument_id': 'ETH-USDT-SWAP',  # 合约代码，当更换合约的时候需要手工修改
+                 'leverage': '2',  # 控制实际交易的杠杆倍数，在实际交易中可以自己修改。此处杠杆数，必须小于页面上的最大杠杆数限制
+                 'strategy_name': 'real_signal_simple_bolling_bias1',  # 使用的策略的名称
+                 'para': [540, 2.2, 0.08]
+                 },  # 策略参数
 }
 
 time_interval = '15m'
-max_len = 800
+max_len = 600
 long_sleep_time = 10
 
 def start():
@@ -78,7 +79,7 @@ def start():
         # 把历史数据与最新数据合并
         df = symbol_candle_data[symbol].append(recent_candle_data[symbol], ignore_index=True)
         df.drop_duplicates(subset=['candle_begin_time_GMT8'], keep='last', inplace=True)
-        df.sort_values(by='candle_begin_time_GMT8', inplace=True)  # 排序，理论上这步应该可以省略，加快速度
+        df.sort_values(by='candle_begin_time_GMT8', inplace=True, ascending=True)  # 排序，理论上这步应该可以省略，加快速度
         df = df.iloc[-max_len:]  # 保持最大K线数量不会超过max_len个
         df.reset_index(drop=True, inplace=True)
         symbol_candle_data[symbol] = df

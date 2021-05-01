@@ -75,6 +75,9 @@ def okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_a
 
     order_id_list = []
     for order_type in symbol_signal[symbol]:
+
+        params['px'] = str(cal_order_price(symbol_info.at[symbol, "信号价格"], order_type))
+        params['sz'] = str(int(cal_order_size(symbol, symbol_info, symbol_config[symbol]['leverage'])))
         try:
             if order_type == 1:
                 params['side'] = 'buy'
@@ -88,14 +91,19 @@ def okex_future_place_order(symbol_info, symbol_config, symbol_signal, max_try_a
             elif order_type == 4:
                 params['side'] = 'buy'
                 params['posSide'] = 'short'
+            if order_type in [1, 4]:    # 开多并平空
+                params['side'] = 'buy'
+                params['posSide'] = 'long'
+            elif order_type in [2, 3]: # 开空并平多
+                params['side'] = 'buy'
+                params['posSide'] = 'short'
 
-            params['px'] = str(cal_order_price(symbol_info.at[symbol, "信号价格"], order_type))
-            params['sz'] = str(int(cal_order_size(symbol, symbol_info, symbol_config[symbol]['leverage'])))
+
             print('开始下单：', datetime.now())
-            order_info = futures_post_order(params)
-            for order in order_info:
-                order_id_list.append(order['ordId'])
-            print(order_info, '下单完成：', datetime.now())
+            # order_info = futures_post_order(params)
+            # for order in order_info:
+            #     order_id_list.append(order['ordId'])
+            # print(order_info, '下单完成：', datetime.now())
         except Exception as e:
             print(e)
             print("下单失败")

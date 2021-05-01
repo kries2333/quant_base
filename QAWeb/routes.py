@@ -18,10 +18,10 @@ def routes(app):
     @app.route('/local')
     def local():
         symbol = 'ETH/USDT'
-        signal_name = 'signal_double_bolling_mod1'
+        signal_name = 'signal_double_bolling_rsi'
         rule_type = '15m'
 
-        p = '../data/output/equity_curve/signal_double_bolling_mod1_ETH_15min_[440, 128].csv'
+        p = '../data/output/equity_curve/signal_double_bolling_rsi_ETH_15T_[180].csv'
         _all_data = pd.read_csv(p)
 
         trade = transfer_equity_curve_to_trade(_all_data)

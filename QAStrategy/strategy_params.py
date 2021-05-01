@@ -10,6 +10,7 @@ from QAStrategy.Position import position_for_OKEx_future
 from QAStrategy.Statistics import return_drawdown_ratio
 import QAStrategy.Signals
 import QAStrategy.Signals_mod1
+import QAStrategy.Signals_bias
 
 tag = '20210417'  # 本次回测标记
 description = '回测数据基于币安usdt现货的分钟数据'
@@ -21,7 +22,7 @@ min_margin_ratio = 1 / 100  # 最低保证金率，低于就会爆仓
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
 drop_days = 10  # 币种刚刚上线10天内不交易
 
-lookup = {'Signals': QAStrategy.Signals, "mod1": QAStrategy.Signals_mod1}
+lookup = {'Signals': QAStrategy.Signals, "bias": QAStrategy.Signals_bias , "mod1": QAStrategy.Signals_mod1}
 
 # =====批量遍历策略参数
 # ===单次循环
@@ -53,7 +54,7 @@ def calculate_by_one_loop(para, model_name, df, signal_name, symbol, rule_type):
     return rtn
 
 def straegy_start(model_name, signal_name):
-    for symbol in ['BTC', 'ETH']:
+    for symbol in ['ETH']:
         for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
             print('开始遍历该策略参数：', signal_name, symbol, rule_type)
@@ -94,7 +95,7 @@ def straegy_start(model_name, signal_name):
             # 利用partial指定参数值
             part = partial(calculate_by_one_loop, model_name=model_name, df=df, signal_name=signal_name, symbol=symbol, rule_type=rule_type)
 
-            with Pool(max(cpu_count() - 1, 1)) as pool:
+            with Pool(max(cpu_count() - 2, 1)) as pool:
                 # 使用并行批量获得data frame的一个列表
                 df_list = pool.map(part, para_list)
                 print('读入完成, 开始合并', datetime.now() - start_time)
@@ -114,6 +115,6 @@ def straegy_start(model_name, signal_name):
     return True
 
 if __name__ == '__main__':
-    signal_name = 'signal_double_bolling_rsi'
-    temp = "mod1"
+    signal_name = 'signal_adapt_bolling_bias1'
+    temp = "bias"
     straegy_start(temp, signal_name)

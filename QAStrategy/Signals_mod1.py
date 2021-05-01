@@ -203,68 +203,68 @@ def signal_atrboll_bolling_para_list(m_list=range(20, 1000+20, 20), d_list=[i / 
 
 def signal_double_bolling_rsi(df, para=[20, 200]):
     """
+     针对原始布林策略进行修改。
+     当开仓的时候，如果bias过大，即价格离均线过远，那么就先不开仓。等价格和均线距离小于bias_pct之后，才按照原计划开仓
      :param df:
-     :param para: n, m
+     :param para: n,m,bias_pct
      :return:
-
-     # 布林线策略
-     # 布林线中轨：n天收盘价的移动平均线
-     # 布林线上轨：n天收盘价的移动平均线 + m * n天收盘价的标准差
-     # 布林线上轨：n天收盘价的移动平均线 - m * n天收盘价的标准差
-     # 当收盘价由下向上穿过上轨的时候，做多；然后由上向下穿过中轨的时候，平仓。
-     # 当收盘价由上向下穿过下轨的时候，做空；然后由下向上穿过中轨的时候，平仓。
      """
 
     # ===策略参数
     n = int(para[0])
-    m = float(para[1])
 
-    # ===计算布林指标
-    # 计算均线 、上轨、下轨
+    # ===计算指标
+    # 计算均线
     df['median'] = df['close'].rolling(n, min_periods=1).mean()
+    # 计算上轨、下轨道
     df['std'] = df['close'].rolling(n, min_periods=1).std(ddof=0)  # ddof代表标准差自由度
 
-    # 自适应改造 bolling_std系数 m
-    df['m'] = (abs((df['close'] - df['median']) / df['std'])).rolling(n, min_periods=1).max()
-    df['upper'] = df['median'] + df['m'] * df['std']
-    df['lower'] = df['median'] - df['m'] * df['std']
+    z_score = abs((df['close'] - df['median']) / df['std'])
+    m = z_score.rolling(window=n).max().shift(1)
 
-    # ===计算RSI指标
-    rsi = talib.RSI(df['close'], m)
+    df['upper'] = df['median'] + m * df['std']
+    df['lower'] = df['median'] - m * df['std']
+
+
+    # 计算RSI
+    rsi1 = talib.RSI(df['close'], 12)
+    rsi2 = talib.RSI(df['close'], 24)
+
+    rsi1 = pd.Series(rsi1)
+    rsi2 = pd.Series(rsi2)
 
     # ===计算信号
     # 找出做多信号
-    # condition_long = (df['close'] >= df['upper']) & (df['close'].shift(1) <= df['upper'].shift(1))  # K线上穿上轨
-    condition1 = df['close'] > df['median'] & df['close'] < df['upper']
-    rsi_limit = rsi > 50
-    df.loc[condition1 & rsi_limit, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
+    condition1 = df['close'] > df['upper']  # 当前K线的收盘价 > 上轨
+    condition2 = df['close'].shift(1) <= df['upper'].shift(1)  # 之前K线的收盘价 <= 上轨
+    condition3 = (rsi1 > rsi2) & (rsi1.shift(1) < rsi2.shift(1))
+    df.loc[condition1 & condition2 & condition3, 'signal_long'] = 1  # 将产生做多信号的那根K线的signal设置为1，1代表做多
 
-    # 找出做多平仓信号，
-    condition_sell = (df['close'] < df['median']) & (df['close'].shift(1) >= df['median'].shift(1))  # k线下穿中轨
-    rsi_limit = rsi > 80  # 判断 j值的历史百分位低于30%为超卖，可以做多
-    df.loc[rsi_limit, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    # 找出做多平仓信号
+    condition1 = df['close'] < df['median']  # 当前K线的收盘价 < 中轨
+    condition2 = df['close'].shift(1) >= df['median'].shift(1)  # 之前K线的收盘价 >= 中轨
+    df.loc[condition1 & condition2, 'signal_long'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
     # 找出做空信号
-    # condition_short = (df['close'] <= df['lower']) & (df['close'].shift(1) >= df['lower'].shift(1))  # 当前K线下穿下轨
-    condition1 = df['close'] < df['median'] & df['close'] > df['lower']
-    rsi_limit = rsi < 50
-    df.loc[condition1 & rsi_limit, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
+    condition1 = df['close'] < df['lower']  # 当前K线的收盘价 < 下轨
+    condition2 = df['close'].shift(1) >= df['lower'].shift(1)  # 之前K线的收盘价 >= 下轨
+    condition3 = (rsi1 < rsi2) & (rsi1.shift(1) > rsi2.shift(1))
+    df.loc[condition1 & condition2 & condition3, 'signal_short'] = -1  # 将产生做空信号的那根K线的signal设置为-1，-1代表做空
 
     # 找出做空平仓信号
-    condition_cover = (df['close'] > df['median']) & (df['close'].shift(1) <= df['median'].shift(1))  # K线上穿中轨
-    rsi_limit = rsi < 20  # 判断 j值的历史百分位低于30%为超卖，可以做多
-    df.loc[rsi_limit, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
+    condition1 = df['close'] > df['median']  # 当前K线的收盘价 > 中轨
+    condition2 = df['close'].shift(1) <= df['median'].shift(1)  # 之前K线的收盘价 <= 中轨
+    df.loc[condition1 & condition2, 'signal_short'] = 0  # 将产生平仓信号当天的signal设置为0，0代表平仓
 
-    # # 合并做多做空信号，去除重复信号
-    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1,
-                                                           skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
+    # 合并做多做空信号，去除重复信号
+    df['signal'] = df[['signal_long', 'signal_short']].sum(axis=1, min_count=1, skipna=True)  # 若你的pandas版本是最新的，请使用本行代码代替上面一行
     temp = df[df['signal'].notnull()][['signal']]
     temp = temp[temp['signal'] != temp['signal'].shift(1)]
     df['signal'] = temp['signal']
 
     # ===删除无关变量
     df.drop(['std', 'signal_long', 'signal_short'], axis=1, inplace=True)
-    # df.drop(['std', 'signal_long', 'signal_short','m','kdj_exceed'], axis=1, inplace=True)
+
     return df
 
 
@@ -282,13 +282,16 @@ def signal_double_bolling_rsi_para_list(n_list=range(20, 1000+20, 20), m_list=ra
      :param n_list:
      :return:
      """
-    print("参数个数:", len(n_list) * len(m_list))
+    # print("参数个数:", len(n_list) * len(m_list))
 
     para_list = []
 
+    # for n in n_list:
+    #     for m in m_list:
+    #         para = [n, m]
+    #         para_list.append(para)
     for n in n_list:
-        for m in m_list:
-            para = [n, m]
-            para_list.append(para)
+        para = [n]
+        para_list.append(para)
 
     return para_list
