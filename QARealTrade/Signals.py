@@ -2,6 +2,9 @@ import pandas as pd
 import random
 
 # 将None作为信号返回
+from QAUilt.common import log_info
+
+
 def real_signal_none(df, now_pos, avg_price, para):
     """
     发出空交易信号
@@ -200,8 +203,8 @@ def real_signal_simple_bolling_bias1(df, now_pos, avg_price, para=[200, 2, 0.3])
     close = df.iloc[-1]['close']
     close2 = df.iloc[-2]['close']
 
-    print("平均线 n = ", n)
-    print("标准差的倍数 m = ", m)
+    log_info("平均线 n = {}".format(n))
+    log_info("标准差的倍数 m = ".format(m))
 
     # 计算上轨、下轨道
     upper = median + m * std
@@ -230,8 +233,8 @@ def real_signal_simple_bolling_bias1(df, now_pos, avg_price, para=[200, 2, 0.3])
     elif (close > median) and (close2 <= median2) and (bias_down < -1 * bias_pct):
         signal = 0
 
-    print("time={}".format(df.iloc[0]['candle_begin_time_GMT8']))
-    print("close={} upper={} lower={}".format(close, upper, lower))
-    print("close2={} upper2={} lower2={}".format(close2, upper2, lower2))
-    print("signal={}  bias={} std={} std2={}".format(signal, bias, std, std2))
+    log_info("time={}".format(df.iloc[0]['candle_begin_time_GMT8']))
+    log_info("close={} upper={} lower={}".format(close, upper, lower))
+    log_info("close2={} upper2={} lower2={}".format(close2, upper2, lower2))
+    log_info("signal={}  bias={} std={} std2={}".format(signal, bias, std, std2))
     return signal

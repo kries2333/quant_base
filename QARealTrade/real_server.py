@@ -9,6 +9,7 @@ import pandas as pd
 import logging
 from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data, single_threading_get_data
 from QARealTrade.Uity import send_dingding_msg, dingding_report_every_loop, sleep_until_run_time
+from QAUilt.common import log_debug, log_info
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
@@ -67,7 +68,7 @@ def start():
 
         # 更新账户信息symbol_info
         symbol_info = update_symbol_info(symbol_info, symbol_config)
-        print('\nsymbol_info:\n', symbol_info, '\n')
+        log_debug("symbol_info = {}".format(symbol_info))
 
         # =获取策略执行时间，并sleep至该时间
         run_time = sleep_until_run_time(time_interval)
@@ -86,25 +87,24 @@ def start():
 
         # =计算每个币种的交易信号
         symbol_signal = calculate_signal(symbol_info, symbol_config, symbol_candle_data)
-        print('\nsymbol_info:\n', symbol_info)
-        print('本周期交易计划:', symbol_signal)
+        log_info("symbol_signal = {}".format(symbol_signal))
 
         # 下单
         symbol_order = pd.DataFrame()
         if symbol_signal:
             symbol_order = single_threading_place_order(symbol_info, symbol_config, symbol_signal)  # 单线程下单
-            print('下单记录：\n', symbol_order)
+            log_info(symbol_order)
 
             # 更新订单信息，查看是否完全成交
             time.sleep(short_sleep_time)  # 休息一段时间再更新订单信息
             # symbol_order = update_order_info(exchange, symbol_config, symbol_order)
-            print('更新下单记录：', '\n', symbol_order)
+            log_debug("更新下单记录 = {}".format(symbol_order))
 
         # 重新更新账户信息symbol_info
         time.sleep(long_sleep_time)  # 休息一段时间再更新
         symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)
         symbol_info = update_symbol_info(symbol_info, symbol_config)
-        print('\nsymbol_info:\n', symbol_info, '\n')
+        log_debug("symbol_info = {}".format(symbol_info))
 
         # 发送钉钉消息
         dingding_report_every_loop(symbol_info, symbol_signal, symbol_order, run_time)
