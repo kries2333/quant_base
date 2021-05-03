@@ -1,5 +1,7 @@
+import hmac
 import json
 import time
+from _sha256 import sha256
 
 import requests
 import datetime
@@ -10,18 +12,19 @@ from QAUilt.common import get_sign
 
 Binance_base_url = 'https://fapi.binance.com'
 
-apikey = "ca34b533-4bd0-457a-bee7-b5a6eaf89da8"
-passwd = "Tt84521485"
-secret = "C07914C0F473535F92045FE10A4D6BEF"
+apikey = "j4MI0GEdLGS6Aa6MlhuuBZqtGJBbSQRTVQuBKC9enPtGEGfol67jMFIi9Hkudno4"
+secret = "gWSDCYJxQQKo174FEHvxTkzTcxFyzK4mlqXa3s13yslttRrZfkHnWgDoDNndZB1R"
+
+def get_SHA256(data, key):
+    data = data.encode('utf-8')
+    sign = hmac.new(key.encode('utf-8'), data, digestmod=sha256).hexdigest().upper()
+    return sign
 
 def binance_futures_get_accounts():
 
     requestPath = "/fapi/v2/balance"
 
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    # sign = get_sign((str(timestamp) + 'GET' + requestPath), secret)
-
-
+    timestamp = int(round(time.time() * 1000))
 
     # 请求数据
     url = urljoin(
@@ -32,9 +35,12 @@ def binance_futures_get_accounts():
     headers = {"Content-Type": "application/json",
                "X-MBX-APIKEY": apikey}
 
+
+
+    sign = get_SHA256('timestamp=' + (str(timestamp)), secret)
     params = {
         'timestamp': timestamp,
-        'signature': ''
+        'signature': sign
     }
 
     retries = 1
@@ -43,7 +49,8 @@ def binance_futures_get_accounts():
 
             req = requests.get(
                 url,
-                params=params
+                params=params,
+                headers=headers
             )
             # 防止频率过快
             time.sleep(0.5)
@@ -54,11 +61,7 @@ def binance_futures_get_accounts():
         if (retries == 0):
             # 成功获取才处理数据，否则继续尝试连接
             msg_dict = json.loads(req.content)
-            if msg_dict['code'] == '0':
-                data = msg_dict['data']
-                return data
-            else:
-                print("err=", req.content)
+            return msg_dict
 
     return None
 

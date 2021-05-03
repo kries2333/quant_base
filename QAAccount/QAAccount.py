@@ -1,12 +1,13 @@
 import pandas as pd
 
+from QAAccount.QAAccount_binance import binance_futures_get_accounts
 from QAAccount.QAAccount_okex import okex_futures_get_accounts, okex_fetch_future_position
 
 def fetch_future_account(ex):
     if ex == "okex":
         future_info = okex_futures_get_accounts()
     elif ex == "binance":
-        print("")
+        future_info = binance_futures_get_accounts()
 
     data = future_info[0]['details']
     df = pd.DataFrame(data, dtype=float).T  # 将数据转化为df格式
