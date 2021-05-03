@@ -5,28 +5,20 @@ import requests
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
-OKEx_base_url = 'https://www.okex.com'
+Binance_base_url = 'https://fapi.binance.com'
 
-def fetch_okex_ohlcv(symbol, since=None, timeframe='1m', limit=100):
+def fetch_binance_ohlcv(symbol, since=None, timeframe='1m', limit=100):
     # 请求数据
     url = urljoin(
-        OKEx_base_url,
-        '/api/v5/market/candles'
+        Binance_base_url,
+        '/fapi/v1/klines'
     )
 
-    if (since == None):
-        params = {
-            "instId": symbol,
-            "bar": timeframe,
-            "limit": limit
-        }
-    else:
-        params = {
-            "instId": symbol,
-            "after": since,  # Z结尾的ISO时间 String
-            "bar": timeframe,
-            "limit": limit
-        }
+    params = {
+        "symbol": symbol,
+        "interval": timeframe,  # Z结尾的ISO时间 String
+        "limit": 1000
+    }
 
     retries = 1
 
@@ -46,9 +38,6 @@ def fetch_okex_ohlcv(symbol, since=None, timeframe='1m', limit=100):
         if (retries == 0):
             # 成功获取才处理数据，否则继续尝试连接
             msg_dict = json.loads(req.content)
-            if msg_dict['code'] == '0':
-                return msg_dict['data']
-            else:
-                print("err=", req.content)
+            return msg_dict
 
     return None

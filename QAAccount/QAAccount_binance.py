@@ -8,37 +8,42 @@ import pandas as pd
 from urllib.parse import urljoin
 from QAUilt.common import get_sign
 
+Binance_base_url = 'https://fapi.binance.com'
+
 apikey = "ca34b533-4bd0-457a-bee7-b5a6eaf89da8"
 passwd = "Tt84521485"
 secret = "C07914C0F473535F92045FE10A4D6BEF"
 
-OKEx_base_url = 'https://www.okex.com'
+def binance_futures_get_accounts():
 
-def okex_futures_get_accounts():
-
-    requestPath = "/api/v5/account/balance"
+    requestPath = "/fapi/v2/balance"
 
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    sign = get_sign((str(timestamp) + 'GET' + requestPath), secret)
+    # sign = get_sign((str(timestamp) + 'GET' + requestPath), secret)
+
+
 
     # 请求数据
     url = urljoin(
-        OKEx_base_url,
+        Binance_base_url,
         requestPath
     )
 
     headers = {"Content-Type": "application/json",
-               "OK-ACCESS-KEY": apikey,
-               "OK-ACCESS-SIGN": sign,
-               "OK-ACCESS-TIMESTAMP": timestamp,
-               "OK-ACCESS-PASSPHRASE": passwd}
+               "X-MBX-APIKEY": apikey}
+
+    params = {
+        'timestamp': timestamp,
+        'signature': ''
+    }
+
     retries = 1
     while (retries != 0):
         try:
 
             req = requests.get(
                 url,
-                headers=headers
+                params=params
             )
             # 防止频率过快
             time.sleep(0.5)
@@ -57,7 +62,7 @@ def okex_futures_get_accounts():
 
     return None
 
-def okex_fetch_future_position():
+def binance_fetch_future_position():
 
     requestPath = "/api/v5/account/positions"
 
@@ -66,7 +71,7 @@ def okex_fetch_future_position():
 
     # 请求数据
     url = urljoin(
-        OKEx_base_url,
+        Binance_base_url,
         requestPath
     )
 

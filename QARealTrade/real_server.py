@@ -1,13 +1,13 @@
 import time
 import traceback
 
-from QAAccount.QAAccount_okex import update_symbol_info
-from QAOrder.QAOrder_okex import okex_future_place_order, single_threading_place_order
+from QAAccount.QAAccount import update_symbol_info
+from QAOrder.QAOrder_okex import single_threading_place_order
 from QARealTrade.Config import *
 from QARealTrade.Function import *
 import pandas as pd
 import logging
-from QAMarket.QAMarket import fetch_okex_symbol_history_candle_data, okex_fetch_candle_data, single_threading_get_data
+from QAMarket.QAMarket import single_threading_get_data, fetch_symbol_history_candle_data
 from QARealTrade.Uity import send_dingding_msg, dingding_report_every_loop, sleep_until_run_time
 from QAUilt.common import log_debug, log_info
 
@@ -52,6 +52,7 @@ symbol_config = {
 time_interval = '15m'
 max_len = 600
 long_sleep_time = 10
+ex = 'okex'
 
 def start():
 
@@ -59,7 +60,7 @@ def start():
 
     # 获取的历史数据
     for symbol in symbol_config.keys():
-        symbol_candle_data[symbol] = fetch_okex_symbol_history_candle_data(symbol_config[symbol]['instrument_id'], time_interval, max_len)
+        symbol_candle_data[symbol] = fetch_symbol_history_candle_data(ex, symbol_config[symbol]['instrument_id'], time_interval, max_len)
 
     while True:
         # 初始化symbol_info，在每次循环开始时都初始化
@@ -67,7 +68,7 @@ def start():
         symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)  # 转化为dataframe
 
         # 更新账户信息symbol_info
-        symbol_info = update_symbol_info(symbol_info, symbol_config)
+        symbol_info = update_symbol_info(ex, symbol_info, symbol_config)
         log_debug("symbol_info = {}".format(symbol_info))
 
         # =获取策略执行时间，并sleep至该时间
@@ -75,7 +76,7 @@ def start():
 
         # =并行获取所有币种最近数据
         candle_num = 10
-        recent_candle_data = single_threading_get_data(symbol_info, symbol_config, time_interval, run_time, candle_num)
+        recent_candle_data = single_threading_get_data(ex, symbol_info, symbol_config, time_interval, run_time, candle_num)
 
         # 把历史数据与最新数据合并
         df = symbol_candle_data[symbol].append(recent_candle_data[symbol], ignore_index=True)
@@ -103,7 +104,7 @@ def start():
         # 重新更新账户信息symbol_info
         time.sleep(long_sleep_time)  # 休息一段时间再更新
         symbol_info = pd.DataFrame(index=symbol_config.keys(), columns=symbol_info_columns)
-        symbol_info = update_symbol_info(symbol_info, symbol_config)
+        symbol_info = update_symbol_info(ex, symbol_info, symbol_config)
         log_debug("symbol_info = {}".format(symbol_info))
 
         # 发送钉钉消息

@@ -16,6 +16,7 @@ def get_sign(data, key):
     return sign
 
 def log_info(context):
+    print(context)
     logging.info(context)
 
 def log_debug(context):

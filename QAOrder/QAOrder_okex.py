@@ -12,8 +12,12 @@ from dateutil.tz import tzutc
 
 from QARealTrade.Function import cal_order_size, cal_order_price
 from QAUilt.common import get_sign
-from QAUilt.config import *
 
+OKEx_base_url = 'https://www.okex.com'
+
+apikey = "ca34b533-4bd0-457a-bee7-b5a6eaf89da8"
+passwd = "Tt84521485"
+secret = "C07914C0F473535F92045FE10A4D6BEF"
 
 def futures_post_order(params):
     '''
