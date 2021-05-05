@@ -1,6 +1,6 @@
 import pandas as pd
 
-from QAAccount.QAAccount_binance import binance_futures_get_accounts
+from QAAccount.QAAccount_binance import binance_futures_get_accounts, binance_fetch_future_position
 from QAAccount.QAAccount_okex import okex_futures_get_accounts, okex_fetch_future_position
 
 def fetch_future_account(ex):
@@ -9,24 +9,15 @@ def fetch_future_account(ex):
     elif ex == "binance":
         future_info = binance_futures_get_accounts()
 
-    data = future_info[0]['details']
-    df = pd.DataFrame(data, dtype=float).T  # 将数据转化为df格式
-    return df
+    return future_info
 
 def fetch_future_position(ex):
     if ex == "okex":
         position_info = okex_fetch_future_position()
     elif ex == "binance":
-        print("")
+        position_info = binance_fetch_future_position()
 
-    # 整理数据
-    df = pd.DataFrame(position_info, dtype=float)
-    # 防止账户初始化时出错
-    if "instId" in df.columns:
-        df['index'] = df['instId'].str[:-5].str.lower()
-        df.set_index(keys='index', inplace=True)
-        df.index.name = None
-    return df
+    return position_info
 
 def update_symbol_info(ex, symbol_info, symbol_config):
     # 通过交易所接口获取合约账户信息
@@ -36,7 +27,7 @@ def update_symbol_info(ex, symbol_info, symbol_config):
     future_position = fetch_future_position(ex)
 
     if future_account.empty is False:
-        symbol_info['账户权益'] = future_account[0]['availEq']
+        symbol_info['账户权益'] = future_account['账户权益']
 
     if future_position.empty is False:
         for x in future_position.index:

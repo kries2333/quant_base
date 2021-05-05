@@ -20,7 +20,7 @@ def get_SHA256(data, key):
     sign = hmac.new(key.encode('utf-8'), data, digestmod=sha256).hexdigest().upper()
     return sign
 
-def binance_futures_get_accounts():
+def get_futures_get_accounts():
 
     requestPath = "/fapi/v2/balance"
 
@@ -65,12 +65,17 @@ def binance_futures_get_accounts():
 
     return None
 
-def binance_fetch_future_position():
+def binance_futures_get_accounts():
+    future_info = get_futures_get_accounts()
+    df = pd.DataFrame(future_info, dtype=float).T  # 将数据转化为df格式\
+    df['账户权益'] = future_info[1]['balance']
 
-    requestPath = "/api/v5/account/positions"
+    return df
 
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    sign = get_sign((str(timestamp) + 'GET' + requestPath), secret)
+def get_fetch_future_position():
+    requestPath = "/fapi/v2/account"
+
+    timestamp = int(round(time.time() * 1000))
 
     # 请求数据
     url = urljoin(
@@ -79,16 +84,21 @@ def binance_fetch_future_position():
     )
 
     headers = {"Content-Type": "application/json",
-                "OK-ACCESS-KEY": apikey,
-               "OK-ACCESS-SIGN": sign,
-               "OK-ACCESS-TIMESTAMP": timestamp,
-               "OK-ACCESS-PASSPHRASE": passwd}
+               "X-MBX-APIKEY": apikey}
+
+    sign = get_SHA256('timestamp=' + (str(timestamp)), secret)
+    params = {
+        'timestamp': timestamp,
+        'signature': sign
+    }
+
     retries = 1
     while (retries != 0):
         try:
 
             req = requests.get(
                 url,
+                params=params,
                 headers=headers
             )
             # 防止频率过快
@@ -100,10 +110,20 @@ def binance_fetch_future_position():
         if (retries == 0):
             # 成功获取才处理数据，否则继续尝试连接
             msg_dict = json.loads(req.content)
-            if msg_dict['code'] == '0':
-                data = msg_dict['data']
-                return data
-            else:
-                print("err=", req.content)
+            return msg_dict['positions']
 
     return None
+
+def binance_fetch_future_position():
+
+    position_info = get_fetch_future_position()
+
+    # 整理数据
+    df = pd.DataFrame(position_info, dtype=float)
+
+    # 防止账户初始化时出错
+    if "symbol" in df.columns:
+        df['index'] = df['symbol']
+        df.set_index(keys='index', inplace=True)
+        df.index.name = None
+    return df
