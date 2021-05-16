@@ -6,11 +6,11 @@ from QAAccount.QAAccount_okex import okex_futures_get_accounts, okex_fetch_futur
 def fetch_future_account(ex):
     if ex == "okex":
         future_info = okex_futures_get_accounts()
-        df = pd.DataFrame(future_info, dtype=float).T  # 将数据转化为df格式
     elif ex == "binance":
         future_info = binance_futures_get_accounts()
-        df = pd.DataFrame(future_info, dtype=float).T  # 将数据转化为df格式
 
+    data = future_info[0]['details']
+    df = pd.DataFrame(data, dtype=float).T  # 将数据转化为df格式
     return df
 
 def fetch_future_position(ex):
