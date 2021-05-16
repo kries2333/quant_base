@@ -9,8 +9,8 @@ from QAStrategy.Statistics import transfer_equity_curve_to_trade, strategy_evalu
 import QAStrategy.Signals_mod1
 
 symbol = 'ETH-USDT_5m'
-para = [180]
-signal_name = 'signal_double_bolling_rsi'
+para = [500, 2.9, 8]
+signal_name = 'signal_std1_leverage_bolling'
 rule_type = '15T'
 
 symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}

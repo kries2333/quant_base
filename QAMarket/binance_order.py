@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 Binance_base_url = 'https://fapi.binance.com'
 
-def fetch_binance_ohlcv(symbol, since=None, timeframe='1m', limit=100):
+def fetch_binance_ohlcv(symbol, timeframe, limit=100):
     # 请求数据
     url = urljoin(
         Binance_base_url,

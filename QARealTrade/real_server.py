@@ -52,11 +52,11 @@ symbol_instrument_config = {
     'binance': {
         'BTC-USDT': 'BTCUSDT',
         'ETH-USDT': 'ETHUSDT',
-    } ,
+    },
     'okex': {
         'BTC-USDT': 'BTC-USDT-SWAP',
         'ETH-USDT': 'ETH-USDT-SWAP',
-    } ,
+    },
 }
 
 time_interval = '15m'

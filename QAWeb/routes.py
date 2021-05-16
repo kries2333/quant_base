@@ -1,6 +1,9 @@
+import json
+
 from flask import send_from_directory, render_template, request
 
 import QAStrategy.Signals
+from QAAccount.QAAccount_binance import binance_futures_get_accounts, binance_fetch_future_position
 from QAStatistics.all_bolling_statistics import all_statistics
 from QAStrategy.Statistics import transfer_equity_curve_to_trade
 from QAStrategy.strategy_params import straegy_start
@@ -9,11 +12,63 @@ import pandas as pd
 import numpy as np
 from pprint import pprint, pformat
 
-def routes(app):
 
+def routes(app):
     @app.route('/')
     def index():
         print("index")
+
+    @app.route('/get_cash_data')
+    def getCashData():
+        data = []
+
+        try:
+            info = binance_futures_get_accounts()
+
+            for k in range(len(info)):
+                d = dict()
+                d['asset'] = info[k]['asset']
+                d['balance'] = info[k]['balance']
+                d['cross'] = info[k]['crossUnPnl']
+                d['available'] = info[k]['availableBalance']
+                d['ex'] = "BINANCE"
+                data.append(d)
+        except Exception as err:
+            print(err)
+
+        res = {
+            'data': data
+        }
+        return json.dumps(res)
+
+    @app.route('/get_position_data')
+    def getPositionData():
+
+        data = []
+
+        try:
+            info = binance_fetch_future_position()
+
+            positions = info['positions']
+
+            for k in range(len(positions)):
+                amt = float(positions[k]['positionAmt'])
+                if amt > 0:
+                    d = dict()
+                    d['symbol'] = positions[k]['symbol']
+                    d['ex'] = "BINANCE"
+                    d['leverage'] = positions[k]['leverage']
+                    d['side'] = positions[k]['positionSide']
+                    d['amt'] = positions[k]['positionAmt']
+                    d['unprofit'] = positions[k]['unrealizedProfit']
+                    data.append(d)
+        except Exception as err:
+            print(err)
+
+        res = {
+            'data': data
+        }
+        return json.dumps(res)
 
     @app.route('/local')
     def local():
@@ -47,4 +102,3 @@ def routes(app):
             }
         }
         return ret
-

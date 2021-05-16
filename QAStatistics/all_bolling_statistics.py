@@ -38,6 +38,7 @@ def all_statistics(strategy_name):
     print(summary)
     summary.to_csv('../data/output/策略总体评价.csv', index=False)
 
+
 if __name__ == "__main__":
-    strategy_name = "signal_adapt_bolling_bias1"
+    strategy_name = "signal_std1_leverage_bolling"
     all_statistics(strategy_name)

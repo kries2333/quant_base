@@ -19,7 +19,7 @@ leverage_rate = 2
 slippage = 1 / 1000  # 滑点 ，可以用百分比，也可以用固定值。建议币圈用百分比，股票用固定值
 c_rate = 5 / 10000  # 手续费，commission fees，默认为万分之5。不同市场手续费的收取方法不同，对结果有影响。比如和股票就不一样。
 min_margin_ratio = 1 / 100  # 最低保证金率，低于就会爆仓
-symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100}
+symbol_face_value = {'BTC': 0.01, 'EOS': 10, 'ETH': 0.1, 'LTC': 1,  'XRP': 100, 'DOGE': 10}
 drop_days = 10  # 币种刚刚上线10天内不交易
 
 lookup = {'Signals': QAStrategy.Signals, "bias": QAStrategy.Signals_bias , "mod1": QAStrategy.Signals_mod1}
@@ -54,7 +54,7 @@ def calculate_by_one_loop(para, model_name, df, signal_name, symbol, rule_type):
     return rtn
 
 def straegy_start(model_name, signal_name):
-    for symbol in ['ETH']:
+    for symbol in ['DOGE']:
         for rule_type in ['4H', '2H', '1H', '30T', '15T']:
             print(signal_name, symbol, rule_type)
             print('开始遍历该策略参数：', signal_name, symbol, rule_type)
@@ -72,17 +72,12 @@ def straegy_start(model_name, signal_name):
                  'high': 'max',
                  'low': 'min',
                  'close': 'last',
-                 'volume': 'sum',
-                 'quote_volume': 'sum',
-                 'trade_num': 'sum',
-                 'taker_buy_base_asset_volume': 'sum',
-                 'taker_buy_quote_asset_volume': 'sum',
+                 'volume': 'sum'
                  })
             period_df.dropna(subset=['open'], inplace=True)  # 去除一天都没有交易的周期
             period_df = period_df[period_df['volume'] > 0]  # 去除成交量为0的交易周期
             period_df.reset_index(inplace=True)
-            df = period_df[['candle_begin_time', 'open', 'high', 'low', 'close', 'volume', 'quote_volume', 'trade_num',
-                            'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']]
+            df = period_df[['candle_begin_time', 'open', 'high', 'low', 'close', 'volume']]
             df = df[df['candle_begin_time'] >= pd.to_datetime('2018-01-01')]
             df.reset_index(inplace=True, drop=True)
 
@@ -115,6 +110,6 @@ def straegy_start(model_name, signal_name):
     return True
 
 if __name__ == '__main__':
-    signal_name = 'signal_adapt_bolling_bias1'
-    temp = "bias"
+    signal_name = 'signal_std1_leverage_bolling'
+    temp = "mod1"
     straegy_start(temp, signal_name)

@@ -67,10 +67,9 @@ def binance_futures_get_accounts():
 
 def binance_fetch_future_position():
 
-    requestPath = "/api/v5/account/positions"
+    requestPath = "/fapi/v2/account"
 
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    sign = get_sign((str(timestamp) + 'GET' + requestPath), secret)
+    timestamp = int(round(time.time() * 1000))
 
     # 请求数据
     url = urljoin(
@@ -79,16 +78,23 @@ def binance_fetch_future_position():
     )
 
     headers = {"Content-Type": "application/json",
-                "OK-ACCESS-KEY": apikey,
-               "OK-ACCESS-SIGN": sign,
-               "OK-ACCESS-TIMESTAMP": timestamp,
-               "OK-ACCESS-PASSPHRASE": passwd}
+               "X-MBX-APIKEY": apikey}
+
+
+
+    sign = get_SHA256('timestamp=' + (str(timestamp)), secret)
+    params = {
+        'timestamp': timestamp,
+        'signature': sign
+    }
+
     retries = 1
     while (retries != 0):
         try:
 
             req = requests.get(
                 url,
+                params=params,
                 headers=headers
             )
             # 防止频率过快
@@ -100,10 +106,6 @@ def binance_fetch_future_position():
         if (retries == 0):
             # 成功获取才处理数据，否则继续尝试连接
             msg_dict = json.loads(req.content)
-            if msg_dict['code'] == '0':
-                data = msg_dict['data']
-                return data
-            else:
-                print("err=", req.content)
+            return msg_dict
 
     return None
