@@ -1,9 +1,13 @@
-apikey = "7a314674-2f50-4621-a023-4c5a77c7f971"
-secretkey = "4BED850944D5EC719B2C52CD932489EF"
-IP = "0"
-Label = "kries"
-Permissions = "Read/Trade"
+构建完整量化交易平台
 
-207.148.69.134
+通过api接口。=> web  或  qt
 
-3Mx$JQmFRCHw2NhE
+暂时只针对数字货币
+
+数据库 => mongdb
+下载历史数据
+更新历史数据
+
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+
+grant all privileges on *.* to root@'%' identified by "123456" with grant option;
